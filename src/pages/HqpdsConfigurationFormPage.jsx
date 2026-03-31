@@ -36,9 +36,11 @@ import {
 } from '../hooks/mutations'
 
 const CONFIG_MODES = ['simulacion', 'produccion', 'prueba']
+const GARMENT_TYPES = ['Libre - LIB','Manga - MAN', 'Pecho - PEC', 'Espalda - ESP', 'Cuello - CUE', 'Bolsillo - BOL', 'Chalina - CHA']
 
 const DEFAULT_VALUES = {
   design_name: '',
+  garment_type: '',
   description: '',
   creation_date: new Date().toISOString().slice(0, 16),
   last_modified_date: new Date().toISOString().slice(0, 16),
@@ -120,6 +122,7 @@ export const HqpdsConfigurationFormPage = () => {
     if (configuration) {
       reset({
         design_name: configuration.design_name ?? '',
+        garment_type: configuration.garment_type ?? '',
         description: configuration.description ?? '',
         creation_date: configuration.creation_date
           ? new Date(configuration.creation_date).toISOString().slice(0, 16)
@@ -263,6 +266,7 @@ export const HqpdsConfigurationFormPage = () => {
         const createdConfiguration = await createMutation.mutateAsync(newVersionPayload)
         reset({
           design_name: createdConfiguration.design_name ?? '',
+          garment_type: createdConfiguration.garment_type ?? '',
           description: createdConfiguration.description ?? '',
           creation_date: createdConfiguration.creation_date
             ? new Date(createdConfiguration.creation_date).toISOString().slice(0, 16)
@@ -342,6 +346,28 @@ export const HqpdsConfigurationFormPage = () => {
                 error={!!errors.design_name}
                 helperText={errors.design_name?.message}
               />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth error={!!errors.garment_type} disabled={isFieldDisabled('garment_type')}>
+                <InputLabel>Tipo de prenda</InputLabel>
+                <Controller
+                  name="garment_type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select {...field} label="Tipo de prenda">
+                      <MenuItem value="">— Ninguno —</MenuItem>
+                      {GARMENT_TYPES.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                {errors.garment_type && (
+                  <FormHelperText>{errors.garment_type.message}</FormHelperText>
+                )}
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={3}>
               <TextField

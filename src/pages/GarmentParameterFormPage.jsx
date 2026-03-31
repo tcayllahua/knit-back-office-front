@@ -24,9 +24,9 @@ import {
   useUpdateGarmentParameterMutation,
 } from '../hooks/mutations'
 
-const GARMENT_TYPES = ['manga', 'pecho', 'espalda', 'cuello', 'bolsillo', 'otra']
-const GARMENT_MODELS = ['indu', 'sacón', 'fanny', 'chaleco', 'otra']
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+const GARMENT_TYPES = ['Manga - MAN', 'Pecho - PEC', 'Espalda - ESP', 'Cuello - CUE', 'Bolsillo - BOL', 'Libre - LIB', 'Chalina - CHA']
+const GARMENT_MODELS = ['indu', 'sacón', 'fanny', 'chaleco', 'libre']
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Estándar']
 const FINISHING_TYPES = ['overlock', 'cosido', 'sin terminar']
 const COMPLEXITIES = ['simple', 'medio', 'complejo']
 
