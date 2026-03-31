@@ -36,6 +36,8 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   VpnKey as VpnKeyIcon,
+  Cable as CableIcon,
+  LocalShipping as LocalShippingIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore } from '../store/themeStore'
@@ -91,8 +93,8 @@ export const DashboardLayout = () => {
   ]
 
   const settingsSubItems = [
-    { label: 'Hilos', path: '/hilos' },
-    { label: 'Proveedores', path: '/proveedores' },
+    { label: 'Hilos', icon: <CableIcon fontSize="small" />, path: '/hilos' },
+    { label: 'Proveedores', icon: <LocalShippingIcon fontSize="small" />, path: '/proveedores' },
   ]
 
   const currentPageLabel = (() => {
@@ -221,6 +223,9 @@ export const DashboardLayout = () => {
                         },
                       }}
                     >
+                      <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                        {subItem.icon}
+                      </ListItemIcon>
                       <ListItemText
                         primary={subItem.label}
                         primaryTypographyProps={{ fontSize: 13, fontWeight: isSubActive ? 700 : 500 }}
