@@ -1,0 +1,263 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Box,
+  Button,
+  TextField,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  CircularProgress,
+} from '@mui/material'
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  UploadFile as UploadFileIcon,
+  Download as DownloadIcon,
+} from '@mui/icons-material'
+import { DataGrid } from '@mui/x-data-grid'
+import { toast } from 'sonner'
+import * as XLSX from 'xlsx'
+import { useGetProviders } from '../hooks/queries'
+import { useCreateProvidersBulkMutation, useDeleteProviderMutation } from '../hooks/mutations'
+
+const REQUIRED_FIELDS = ['razon_social', 'ruc', 'direccion', 'email', 'telefono', 'celular']
+
+const normalizeHeader = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+
+const normalizeRow = (row) => {
+  const keyMap = {
+    razonsocial: 'razon_social',
+    ruc: 'ruc',
+    direccion: 'direccion',
+    email: 'email',
+    telefono: 'telefono',
+    celular: 'celular',
+  }
+
+  const normalized = {
+    razon_social: '',
+    ruc: '',
+    direccion: '',
+    email: '',
+    telefono: '',
+    celular: '',
+  }
+
+  Object.entries(row).forEach(([key, value]) => {
+    const normalizedKey = keyMap[normalizeHeader(key)]
+    if (normalizedKey) {
+      normalized[normalizedKey] = String(value ?? '').trim()
+    }
+  })
+
+  return normalized
+}
+
+export const ProveedoresPage = () => {
+  const navigate = useNavigate()
+  const [searchText, setSearchText] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
+
+  const { data: items = [], isLoading } = useGetProviders()
+  const deleteMutation = useDeleteProviderMutation()
+  const bulkCreateMutation = useCreateProvidersBulkMutation()
+
+  const filtered = items.filter((item) => {
+    const q = searchText.toLowerCase()
+    return (
+      item.razon_social?.toLowerCase().includes(q) ||
+      item.ruc?.toLowerCase().includes(q) ||
+      item.email?.toLowerCase().includes(q)
+    )
+  })
+
+  const handleDeleteClick = (row) => {
+    setSelectedItem(row)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    await deleteMutation.mutateAsync(selectedItem.id)
+    setDeleteDialogOpen(false)
+    setSelectedItem(null)
+  }
+
+  const handleMassiveUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const buffer = await file.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'array' })
+      const firstSheetName = workbook.SheetNames[0]
+
+      if (!firstSheetName) {
+        toast.error('El archivo Excel no contiene hojas')
+        return
+      }
+
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' })
+
+      if (!rows.length) {
+        toast.error('El archivo no contiene registros para importar')
+        return
+      }
+
+      const normalizedRows = rows.map(normalizeRow)
+
+      const invalidRows = normalizedRows
+        .map((row, index) => {
+          const missing = REQUIRED_FIELDS.filter((field) => !row[field])
+          return missing.length ? { row: index + 2, missing } : null
+        })
+        .filter(Boolean)
+
+      if (invalidRows.length) {
+        const first = invalidRows[0]
+        toast.error(
+          `Error en fila ${first.row}: faltan ${first.missing.join(', ')}. Verifica las columnas del Excel.`
+        )
+        return
+      }
+
+      await bulkCreateMutation.mutateAsync(normalizedRows)
+    } catch (error) {
+      toast.error(error.message || 'No se pudo procesar el archivo Excel')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  const handleDownloadTemplate = () => {
+    const templateRows = [
+      {
+        razon_social: 'Textiles Andinos SAC',
+        ruc: '20123456789',
+        direccion: 'Av. Industrial 123, Lima',
+        email: 'contacto@textilesandinos.com',
+        telefono: '014123456',
+        celular: '987654321',
+      },
+    ]
+
+    const worksheet = XLSX.utils.json_to_sheet(templateRows, {
+      header: REQUIRED_FIELDS,
+    })
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Proveedores')
+    XLSX.writeFile(workbook, 'plantilla_proveedores.xlsx')
+  }
+
+  const columns = [
+    { field: 'razon_social', headerName: 'Razón social', flex: 1, minWidth: 180 },
+    { field: 'ruc', headerName: 'RUC', width: 150 },
+    { field: 'direccion', headerName: 'Dirección', flex: 1, minWidth: 180 },
+    { field: 'email', headerName: 'Email', flex: 1, minWidth: 190 },
+    { field: 'telefono', headerName: 'Teléfono', width: 130 },
+    { field: 'celular', headerName: 'Celular', width: 130 },
+    {
+      field: 'acciones',
+      headerName: 'Acciones',
+      width: 120,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            size="small"
+            onClick={() => navigate(`/proveedores/editar/${params.row.id}`)}
+            title="Editar"
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={() => handleDeleteClick(params.row)}
+            title="Eliminar"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ]
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/proveedores/nuevo')}>
+          Nuevo Proveedor
+        </Button>
+
+        <Button
+          variant="outlined"
+          component="label"
+          startIcon={bulkCreateMutation.isPending ? <CircularProgress size={18} /> : <UploadFileIcon />}
+          disabled={bulkCreateMutation.isPending}
+        >
+          {bulkCreateMutation.isPending ? 'Cargando...' : 'Carga masiva Excel'}
+          <input
+            type="file"
+            hidden
+            accept=".xlsx,.xls"
+            onChange={handleMassiveUpload}
+          />
+        </Button>
+
+        <Button variant="text" startIcon={<DownloadIcon />} onClick={handleDownloadTemplate}>
+          Descargar plantilla
+        </Button>
+
+        <TextField
+          placeholder="Buscar por razón social, RUC o email"
+          size="small"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          sx={{ minWidth: 280 }}
+        />
+      </Box>
+
+      <Box sx={{ height: 620, width: '100%' }}>
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataGrid
+            rows={filtered}
+            columns={columns}
+            pageSizeOptions={[10, 25, 50]}
+            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+            disableSelectionOnClick
+          />
+        )}
+      </Box>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Eliminar el proveedor "{selectedItem?.razon_social}"? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleConfirmDelete} color="error" disabled={deleteMutation.isPending}>
+            {deleteMutation.isPending ? <CircularProgress size={20} /> : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  )
+}

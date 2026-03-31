@@ -1,0 +1,662 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useMachinesStore } from '../store/machinesStore'
+import { supabase } from '../config/supabase'
+import imageCompression from 'browser-image-compression'
+
+export const useCreateMachineMutation = () => {
+  const queryClient = useQueryClient()
+  const createMachine = useMachinesStore((state) => state.createMachine)
+
+  return useMutation({
+    mutationFn: async ({ machineData }) => {
+      return createMachine(machineData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['machines'] })
+      queryClient.invalidateQueries({ queryKey: ['machine-stats'] })
+      toast.success('Máquina creada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el parámetro de máquina')
+    },
+  })
+}
+
+export const useUpdateMachineMutation = () => {
+  const queryClient = useQueryClient()
+  const updateMachine = useMachinesStore((state) => state.updateMachine)
+
+  return useMutation({
+    mutationFn: async ({ id, machineData }) => {
+      return updateMachine(id, machineData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['machines'] })
+      queryClient.invalidateQueries({ queryKey: ['machine-stats'] })
+      toast.success('Máquina actualizada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el parámetro de máquina')
+    },
+  })
+}
+
+export const useDeleteMachineMutation = () => {
+  const queryClient = useQueryClient()
+  const deleteMachine = useMachinesStore((state) => state.deleteMachine)
+
+  return useMutation({
+    mutationFn: async ({ id }) => {
+      return deleteMachine(id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['machines'] })
+      queryClient.invalidateQueries({ queryKey: ['machine-stats'] })
+      toast.success('Máquina eliminada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar la máquina')
+    },
+  })
+}
+
+export const useUpdateUserProfileMutation = (userId) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ profileData, profileImage }) => {
+      // Update profile data
+      const { error: updateError } = await supabase
+        .from('usuarios')
+        .update(profileData)
+        .eq('id_auth', userId)
+
+      if (updateError) throw updateError
+
+      // Upload profile image if provided
+      if (profileImage) {
+        try {
+          // Compress image
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+          }
+          const compressedFile = await imageCompression(profileImage, options)
+
+          // Upload to storage
+          const fileName = `${userId}_${Date.now()}`
+          const { error: uploadError } = await supabase.storage
+            .from('usuarios')
+            .upload(`usuarios/${fileName}`, compressedFile)
+
+          if (uploadError) throw uploadError
+
+          // Get public URL and update database
+          const { data: publicUrlData } = supabase.storage
+            .from('usuarios')
+            .getPublicUrl(`usuarios/${fileName}`)
+
+          const { error: urlUpdateError } = await supabase
+            .from('usuarios')
+            .update({ foto_perfil: publicUrlData.publicUrl })
+            .eq('id_auth', userId)
+
+          if (urlUpdateError) throw urlUpdateError
+        } catch (imageError) {
+          console.error('Erro ao processar imagem:', imageError)
+          throw new Error('Erro ao fazer upload da foto')
+        }
+      }
+
+      return true
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile', userId] })
+      toast.success('Perfil atualizado com sucesso')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Erro ao atualizar perfil')
+    },
+  })
+}
+
+// ─── Garment Parameters ───────────────────────────────────────────────────────
+
+const buildGarmentPayload = (data) => ({
+  garment_type: data.garment_type,
+  garment_model: data.garment_model,
+  size: data.size,
+  length: data.length ? Number(data.length) : null,
+  width: data.width ? Number(data.width) : null,
+  sleeve_length: data.sleeve_length ? Number(data.sleeve_length) : null,
+  chest_circumference: data.chest_circumference ? Number(data.chest_circumference) : null,
+  waist_circumference: data.waist_circumference ? Number(data.waist_circumference) : null,
+  neck_circumference: data.neck_circumference ? Number(data.neck_circumference) : null,
+  stitch_count_horizontal: data.stitch_count_horizontal ? Number(data.stitch_count_horizontal) : null,
+  stitch_count_vertical: data.stitch_count_vertical ? Number(data.stitch_count_vertical) : null,
+  gauge_horizontal: data.gauge_horizontal ? Number(data.gauge_horizontal) : null,
+  gauge_vertical: data.gauge_vertical ? Number(data.gauge_vertical) : null,
+  finishing_type: data.finishing_type || null,
+  pattern_complexity: data.pattern_complexity || null,
+  garment_order: data.garment_order ? Number(data.garment_order) : null,
+  is_main_piece: Boolean(data.is_main_piece),
+  notes: data.notes || null,
+})
+
+export const useCreateGarmentParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { error } = await supabase
+        .from('garment_parameters')
+        .insert(buildGarmentPayload(data))
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['garment-parameters'] })
+      toast.success('Parámetro de prenda creado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el parámetro de prenda')
+    },
+  })
+}
+
+export const useUpdateGarmentParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { error } = await supabase
+        .from('garment_parameters')
+        .update(buildGarmentPayload(data))
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['garment-parameters'] })
+      toast.success('Parámetro de prenda actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el parámetro de prenda')
+    },
+  })
+}
+
+export const useDeleteGarmentParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('garment_parameters')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['garment-parameters'] })
+      toast.success('Parámetro de prenda eliminado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar el parámetro de prenda')
+    },
+  })
+}
+
+const buildKnittingPayload = (data) => ({
+  stitch_type: data.stitch_type,
+  canvas_type: data.canvas_type || null,
+  knitting_mode: data.knitting_mode || null,
+  knitting_submode: data.knitting_submode || null,
+  thread_count: data.thread_count ? Number(data.thread_count) : null,
+  stitch_density: data.stitch_density ? Number(data.stitch_density) : null,
+  pattern_repeat: data.pattern_repeat ? Number(data.pattern_repeat) : null,
+  tension_setting: data.tension_setting ? Number(data.tension_setting) : null,
+  parameter_order: data.parameter_order ? Number(data.parameter_order) : null,
+  is_primary: Boolean(data.is_primary),
+  notes: data.notes || null,
+})
+
+export const useCreateKnittingParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { error } = await supabase
+        .from('knitting_parameters')
+        .insert(buildKnittingPayload(data))
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['knitting-parameters'] })
+      toast.success('Parámetro de tejido creado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el parámetro de tejido')
+    },
+  })
+}
+
+export const useUpdateKnittingParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { error } = await supabase
+        .from('knitting_parameters')
+        .update(buildKnittingPayload(data))
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['knitting-parameters'] })
+      toast.success('Parámetro de tejido actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el parámetro de tejido')
+    },
+  })
+}
+
+export const useDeleteKnittingParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('knitting_parameters')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['knitting-parameters'] })
+      toast.success('Parámetro de tejido eliminado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar el parámetro de tejido')
+    },
+  })
+}
+
+const buildMaterialPayload = (data) => ({
+  yarn_type: data.yarn_type || null,
+  yarn_weight: data.yarn_weight || null,
+  yarn_color: data.yarn_color || null,
+  yarn_brand: data.yarn_brand || null,
+  yarn_composition: data.yarn_composition || null,
+  yarn_thickness: data.yarn_thickness ? Number(data.yarn_thickness) : null,
+  yarn_count: data.yarn_count || null,
+  quantity_used: data.quantity_used ? Number(data.quantity_used) : null,
+  quantity_unit: data.quantity_unit || null,
+  cost_per_unit: data.cost_per_unit ? Number(data.cost_per_unit) : null,
+  supplier: data.supplier || null,
+  lot_number: data.lot_number || null,
+  hqpds_configuration_id: Number(data.hqpds_configuration_id),
+  material_order: data.material_order ? Number(data.material_order) : null,
+  is_primary: Boolean(data.is_primary),
+  notes: data.notes || null,
+})
+
+export const useCreateMaterialParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { error } = await supabase
+        .from('material_parameters')
+        .insert(buildMaterialPayload(data))
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-parameters'] })
+      toast.success('Parámetro de material creado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el parámetro de material')
+    },
+  })
+}
+
+export const useUpdateMaterialParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { error } = await supabase
+        .from('material_parameters')
+        .update(buildMaterialPayload(data))
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-parameters'] })
+      toast.success('Parámetro de material actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el parámetro de material')
+    },
+  })
+}
+
+export const useDeleteMaterialParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('material_parameters')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-parameters'] })
+      toast.success('Parámetro de material eliminado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar el parámetro de material')
+    },
+  })
+}
+
+const buildThreadPayload = (data) => ({
+  codigo_hilo: data.codigo_hilo?.trim() || null,
+  nombre_hilo: data.nombre_hilo?.trim() || null,
+  composicion: data.composicion?.trim() || null,
+  abrev: data.abrev?.trim() || null,
+  instrucciones_cuidado: data.instrucciones_cuidado?.trim() || null,
+  presentacion: data.presentacion?.trim() || null,
+  peso: data.peso ? Number(data.peso) : null,
+  unidad_medida: data.unidad_medida?.trim() || null,
+  codigo_color_hex: data.codigo_color_hex?.trim() || null,
+  color_descripcion: data.color_descripcion?.trim() || null,
+})
+
+export const useCreateThreadMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { error } = await supabase
+        .from('hilos')
+        .insert(buildThreadPayload(data))
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] })
+      toast.success('Hilo creado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el hilo')
+    },
+  })
+}
+
+export const useUpdateThreadMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { error } = await supabase
+        .from('hilos')
+        .update(buildThreadPayload(data))
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] })
+      toast.success('Hilo actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el hilo')
+    },
+  })
+}
+
+export const useDeleteThreadMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('hilos')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] })
+      toast.success('Hilo eliminado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar el hilo')
+    },
+  })
+}
+
+export const useCreateThreadsBulkMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (rows) => {
+      const payload = rows.map(buildThreadPayload)
+      const { error } = await supabase
+        .from('hilos')
+        .insert(payload)
+      if (error) throw error
+      return payload.length
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] })
+      toast.success(`Carga masiva completada: ${count} hilos registrados`)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error en la carga masiva de hilos')
+    },
+  })
+}
+
+const buildProviderPayload = (data) => ({
+  razon_social: data.razon_social?.trim().toUpperCase() || null,
+  ruc: data.ruc?.trim() || null,
+  direccion: data.direccion?.trim() || null,
+  email: data.email?.trim().toLowerCase() || null,
+  telefono: data.telefono?.trim() || null,
+  celular: data.celular?.trim() || null,
+})
+
+export const useCreateProviderMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { error } = await supabase
+        .from('proveedores')
+        .insert(buildProviderPayload(data))
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] })
+      toast.success('Proveedor creado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el proveedor')
+    },
+  })
+}
+
+export const useUpdateProviderMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { error } = await supabase
+        .from('proveedores')
+        .update(buildProviderPayload(data))
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] })
+      toast.success('Proveedor actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el proveedor')
+    },
+  })
+}
+
+export const useDeleteProviderMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('proveedores')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] })
+      toast.success('Proveedor eliminado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar el proveedor')
+    },
+  })
+}
+
+export const useCreateProvidersBulkMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (rows) => {
+      const payload = rows.map(buildProviderPayload)
+      const { error } = await supabase
+        .from('proveedores')
+        .insert(payload)
+      if (error) throw error
+      return payload.length
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] })
+      toast.success(`Carga masiva completada: ${count} proveedores registrados`)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error en la carga masiva de proveedores')
+    },
+  })
+}
+
+const buildHqpdsConfigurationPayload = (data) => ({
+  design_name: data.design_name,
+  description: data.description || null,
+  creation_date: data.creation_date || new Date().toISOString(),
+  last_modified_date: new Date().toISOString(),
+  simulation_image_path: data.simulation_image_path || null,
+  simulation_image_name: data.simulation_image_name || null,
+  simulation_image_url: data.simulation_image_url || null,
+  simulation_image_size: data.simulation_image_size ? Number(data.simulation_image_size) : null,
+  pds_file_path: data.pds_file_path || null,
+  pds_file_name: data.pds_file_name || null,
+  pds_file_url: data.pds_file_url || null,
+  pds_file_size: data.pds_file_size ? Number(data.pds_file_size) : null,
+  configuration_mode: data.configuration_mode || null,
+  estimated_knitting_time: data.estimated_knitting_time ? Number(data.estimated_knitting_time) : null,
+  created_by_user: data.created_by_user || null,
+  version: data.version ? Number(data.version) : 1,
+  is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+})
+
+export const useCreateHqpdsConfigurationMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { data: createdConfiguration, error } = await supabase
+        .from('hqpds_configurations')
+        .insert(buildHqpdsConfigurationPayload(data))
+        .select('*')
+        .single()
+      if (error) throw error
+      return createdConfiguration
+    },
+    onSuccess: (createdConfiguration) => {
+      queryClient.setQueryData(['hqpds-configurations'], (current = []) => [
+        createdConfiguration,
+        ...current,
+      ])
+      queryClient.setQueryData(['hqpds-configuration', String(createdConfiguration.id)], createdConfiguration)
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configuration', String(createdConfiguration.id)] })
+      toast.success('Configuración HQPDS creada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear la configuración HQPDS')
+    },
+  })
+}
+
+export const useUpdateHqpdsConfigurationMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const payload = {
+        ...buildHqpdsConfigurationPayload(data),
+        version: Number(data.version || 0) + 1,
+      }
+
+      const { data: updatedConfiguration, error } = await supabase
+        .from('hqpds_configurations')
+        .update(payload)
+        .eq('id', id)
+        .select('*')
+        .single()
+      if (error) throw error
+      return updatedConfiguration
+    },
+    onSuccess: (updatedConfiguration) => {
+      queryClient.setQueryData(['hqpds-configurations'], (current = []) =>
+        current.map((item) => (item.id === updatedConfiguration.id ? updatedConfiguration : item))
+      )
+      queryClient.setQueryData(['hqpds-configuration', String(updatedConfiguration.id)], updatedConfiguration)
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configuration', String(updatedConfiguration.id)] })
+      toast.success('Configuración HQPDS actualizada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar la configuración HQPDS')
+    },
+  })
+}
+
+export const useDeleteHqpdsConfigurationMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('hqpds_configurations')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: (_, deletedId) => {
+      queryClient.setQueryData(['hqpds-configurations'], (current = []) =>
+        current.filter((item) => item.id !== deletedId)
+      )
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      toast.success('Configuración HQPDS eliminada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar la configuración HQPDS')
+    },
+  })
+}
