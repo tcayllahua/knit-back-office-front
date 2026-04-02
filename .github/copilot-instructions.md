@@ -1,239 +1,74 @@
-# Copilot Instructions for Knit Back Office
+# Knit Back Office — Guía del Proyecto
 
-## Project Overview
-Knit Back Office es una aplicación web para la gestión integral de máquinas de tejer, construida con React, Vite, Material-UI y Supabase.
+Knit Back Office: gestión de máquinas de tejer. React 18 + Vite, MUI, Zustand, React Query, Supabase.
+Ver [README.md](../README.md) para características/instalación, [SETUP.md](../SETUP.md) para onboarding, [database-schema.sql](../database-schema.sql) para el esquema completo.
 
-## Tech Stack
-- **Frontend**: React 18 + Vite
-- **UI Library**: Material-UI (MUI)
-- **State Management**: Zustand
-- **API Queries**: React Query (TanStack Query)
-- **Forms**: React Hook Form
-- **Backend**: Supabase (Auth + Database + Storage)
-- **Notifications**: Sonner
-- **Image Processing**: browser-image-compression
+## Compilar y Probar
 
-## Key Features
-1. **Authentication** - Login/Register con Supabase Auth
-2. **Machine Management** - CRUD completo con DataGrid
-3. **User Profile** - Editar perfil y subir foto
-4. **Dashboard** - Estadísticas de máquinas
-5. **Dark Mode** - Toggle tema con persistencia
-6. **File Upload** - PDFs y fotos con validación
+```bash
+npm install          # Instalar dependencias
+npm run dev          # Servidor de desarrollo Vite (localhost:5173)
+npm run build        # Build de producción
+npm run lint         # ESLint con auto-fix
+npm run type-check   # Validación TypeScript
+```
 
-## Folder Structure
+## Arquitectura
 
 ```
 src/
-├── config/           # Configuración de Supabase
-├── store/            # Zustand stores
-│   ├── authStore.js
-│   ├── themeStore.js
-│   └── machinesStore.js
-├── hooks/            # React Query hooks
-│   ├── queries.js    # useGetMachines, useGetMachine, etc.
-│   └── mutations.js  # useCreateMachineMutation, etc.
-├── components/       # Componentes reutilizables
-│   ├── DashboardLayout.jsx  # Layout principal con AppBar/Sidebar
-│   └── ProtectedRoute.jsx    # Wrapper de rutas protegidas
-├── pages/            # Páginas (uno por ruta principal)
-│   ├── LoginPage.jsx
-│   ├── RegisterPage.jsx
-│   ├── DashboardPage.jsx
-│   ├── MaquinasPage.jsx      # Listado con DataGrid
-│   ├── MaquinaFormPage.jsx   # Crear/Editar
-│   └── MiPerfilPage.jsx
-├── router.jsx        # Definición de rutas con React Router
-├── theme.js          # Temas light/dark de MUI
-├── App.jsx           # Componente raíz
-└── main.jsx          # Punto de entrada
+├── config/supabase.js          # Cliente Supabase (env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+├── store/                      # Stores Zustand (authStore, themeStore, machinesStore)
+├── hooks/queries.js            # Todos los hooks useQuery (uno por entidad)
+├── hooks/mutations.js          # Todos los hooks useMutation (CRUD + importación masiva)
+├── components/                 # DashboardLayout (AppBar+Drawer+Outlet), ProtectedRoute
+├── pages/                      # Una página por ruta: listado (*Page.jsx) + formulario (*FormPage.jsx)
+├── router.jsx                  # React Router v6 — rutas públicas + protegidas bajo DashboardLayout
+├── theme.js                    # Temas MUI claro/oscuro
+└── App.jsx                     # Stack de providers: QueryClientProvider > ThemeProvider > RouterProvider > Toaster
 ```
 
-## Important Rules and Patterns
+**Entidades**: máquinas (machine_parameters), parámetros de prenda, parámetros de tejido, parámetros de material, hilos, proveedores, configuraciones HQPDS, usuarios. Todas las tablas de parámetros tienen FK a `hqpds_configurations` con `ON DELETE CASCADE`.
 
-### 1. QueryClient
-- **MUST** ser creado FUERA del componente App como constante del módulo
-- Nunca dentro del render
-- Configurar defaultOptions para staleTime y gcTime
+**Almacenamiento**: Bucket único `kinit-files-01` para todos los archivos (imágenes, PDFs). Ver [storage-policies.sql](../storage-policies.sql).
 
-### 2. Zustand Stores
-- Separar estado UI de llamadas a Supabase en la estructura
-- Mantener funciones async en el store para consistencia
-- Usar middleware `persist` para persistencia en localStorage
-- Ejemplo: `useThemeStore` usa persist, `useAuthStore` usa persist con partialize
+## Convenciones
 
-### 3. React Query Hooks (Stack Pattern)
-- `queries.js` - contiene todos los `useQuery` hooks
-- `mutations.js` - contiene todos los `useMutation` hooks
-- Cada mutation debe tener `onSuccess` e `onError`
-- Usar `queryClient.invalidateQueries()` para invalidar caché
-- Toast en onSuccess y onError
+### Capa de Datos (CRÍTICO — seguir estos patrones exactamente)
+- **QueryClient** debe crearse como constante a nivel de módulo fuera de cualquier componente (ver `App.jsx`)
+- **Todas las queries** van en `src/hooks/queries.js` — patrón de keys: `['nombre-entidad']` o `['nombre-entidad', id]`
+- **Todas las mutations** van en `src/hooks/mutations.js` — cada mutation debe:
+  1. Usar una función `buildPayload()` para normalizar datos (trim strings, convertir números, manejar nulls)
+  2. Llamar `queryClient.invalidateQueries()` en éxito
+  3. Mostrar `toast.success()` / `toast.error()` vía Sonner
+- **Importaciones masivas** (hilos, proveedores) usan `xlsx` con normalización de headers para manejar variaciones de ortografía/acentos
 
-### 4. Environment Variables
-- NUNCA hardcodear URLs de Supabase
-- Siempre usar `import.meta.env.VITE_*`
-- Crear `.env.local` con `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
+### Gestión de Estado
+- Stores Zustand con middleware `persist` para localStorage (`auth-storage`, `theme-storage`)
+- `authStore` usa `partialize` para persistir solo campos específicos
+- Las llamadas async a Supabase viven dentro de acciones del store (ej: `machinesStore.createMachine()`)
 
-### 5. File Validation
-- Verificar tipo MIME antes de subir
-- Validar tamaño (PDFs max 5MB)
-- Comprimir imágenes con `browser-image-compression`
+### Páginas
+- **Páginas de listado**: MUI DataGrid con búsqueda/filtros, acciones editar/eliminar, botón "Nueva/Nuevo"
+- **Páginas de formulario**: React Hook Form con `register()` + `Controller` para campos complejos, `helperText` para errores, submit deshabilitado mientras `isSubmitting`
+- **Crear vs Editar**: Determinado por presencia del param URL `:id`; pre-poblar formulario con hook `useGet*`
 
-### 6. Error Handling
-- Cada query/mutation debe tener manejo de errores
-- Usar toast.error() de Sonner para notificaciones
-- Validar en el cliente con React Hook Form
-- Mostrar FormHelperText en campos con errores
+### UI y Estilos
+- Usar prop `sx` de MUI para estilos inline. No usar CSS modules ni styled-components
+- Layout responsive vía breakpoints MUI (`xs`/`md`/`lg` en `sx`)
+- Modo oscuro vía `useThemeStore().toggleDarkMode()` — persiste en localStorage
 
-### 7. Protected Routes
-- Usar `<ProtectedRoute>` para todas las rutas que requieren auth
-- Verificar `authenticated` y `user` del store
-- Mostrar Loading mientras se verifica auth
-- Redirigir a /login si no autenticado
+### Entorno y Seguridad
+- **Nunca** hardcodear URLs o keys de Supabase — siempre usar `import.meta.env.VITE_*`
+- Validar tipo MIME + tamaño de archivo antes de subir (PDFs max 5MB, imágenes comprimidas vía `browser-image-compression`)
+- Todas las tablas usan Row Level Security; `usuarios` restringido al propio perfil, las demás requieren rol autenticado
 
-### 8. Form Validation
-- Usar React Hook Form con `useForm` hook
-- Patrón de validación: email, requerido, minLength, custom
-- Mostrar errores en `helperText` de TextField
-- Deshabilitar botón submit con `isSubmitting`
+## Agregar una Nueva Entidad
 
-### 9. Styling
-- Usar `sx` prop de MUI para estilos inline
-- Usar `theme.palette.mode` para modo oscuro
-- Paleta de colores: primary, secondary, success, error, warning, info
-
-### 10. Dark Mode
-- Usar `useThemeStore` para obtener `darkMode`
-- Usar `toggleDarkMode()` para cambiar
-- Persistencia automática en localStorage
-- Cambiar entre `lightTheme` y `darkTheme` en App.jsx
-
-## Common Patterns
-
-### Fetch Machine with Query
-```javascript
-const { data: machine, isLoading } = useGetMachine(id)
-```
-
-### Create/Update with Mutation
-```javascript
-const mutation = useCreateMachineMutation()
-await mutation.mutateAsync({ machineData, pdfFile })
-```
-
-### Form with Validation
-```javascript
-const { register, handleSubmit, formState: { errors } } = useForm({
-  defaultValues: { ... }
-})
-<TextField {...register('name', { required: 'Required' })} error={!!errors.name} />
-```
-
-### Protected Route
-```javascript
-<ProtectedRoute>
-  <DashboardLayout />
-</ProtectedRoute>
-```
-
-## Database Schema
-
-### Tabla: usuarios
-- id (BIGSERIAL PK)
-- id_auth (UUID FK, references auth.users)
-- email (UNIQUE)
-- nombre, apellido
-- telefono, direccion (OPTIONAL)
-- foto_perfil (can be NULL)
-- fecha_registro (DEFAULT NOW())
-- timestamps
-
-### Tabla: maquinas
-- id (BIGSERIAL PK)
-- nombre, marca, modelo (REQUIRED)
-- numero_serie (UNIQUE)
-- estado (CHECK: activa, inactiva, mantenimiento)
-- fecha_adquisicion (OPTIONAL)
-- ubicacion, descripcion (OPTIONAL)
-- pdf_ficha_tecnica (can be NULL)
-- timestamps
-
-## Storage Buckets
-
-1. **fichas-tecnicas** - Archivos PDF de máquinas
-   - Path: `fichas-tecnicas/{id_maquina}`
-   - Max size: 5MB
-   - Accept: .pdf only
-
-2. **usuarios** - Fotos de perfil
-   - Path: `usuarios/{user_id}`
-   - Max size: 1MB (after compression)
-   - Accept: image/*
-
-## Development Guidelines
-
-### When Adding a Feature
-1. Create/update stores first (Zustand)
-2. Create query/mutation hooks (queries.js, mutations.js)
-3. Create component or page
-4. Update router if needed
-5. Test with toast notifications
-
-### When Fixing Bugs
-1. Check console for errors
-2. Verify Supabase credentials
-3. Check RLS policies if DB issue
-4. Verify file uploads with Storage browser
-5. Check localStorage for persist
-
-### When Optimizing
-1. Look at React Query cache settings
-2. Review component re-render patterns
-3. Check Zustand selector usage (should return single values)
-4. Verify index usage in DataGrid
-5. Optimize images before upload
-
-## Useful Commands
-
-```bash
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Lint code
-npm run lint
-
-# Type check
-npm run type-check
-```
-
-## Troubleshooting
-
-### Database Connection
-1. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-2. Verify RLS policies allow queries
-3. Check network tab for 401/403 errors
-4. Ensure auth user exists for insert operations
-
-### File Upload Fails
-1. Check bucket exists and is public (for read)
-2. Verify file type and size
-3. Check storage RLS policies
-4. Look at network tab upload request
-
-### Auth Issues
-1. Check localStorage for auth-storage
-2. Verify email/password combination
-3. Check user exists in auth.users table
-4. Verify refresh token not expired
-
-### Dark Mode Not Persistent
-1. Check localStorage theme-storage
-2. Verify persist middleware in themeStore
-3. Check browser localStorage is enabled
-4. Clear cache and try again
+1. Agregar tabla + índices + políticas RLS en `database-schema.sql`
+2. Agregar queries `useGet*` en `src/hooks/queries.js`
+3. Agregar mutations `useCreate*`, `useUpdate*`, `useDelete*` en `src/hooks/mutations.js` (con `buildPayload()`)
+4. Crear página de listado (`*Page.jsx`) con DataGrid + búsqueda/filtros
+5. Crear página de formulario (`*FormPage.jsx`) con React Hook Form
+6. Registrar rutas en `src/router.jsx` bajo el layout protegido
+7. Agregar ítem de navegación en `src/components/DashboardLayout.jsx`

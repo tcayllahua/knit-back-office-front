@@ -555,20 +555,20 @@ export const useCreateProvidersBulkMutation = () => {
 }
 
 const buildHqpdsConfigurationPayload = (data) => ({
+  hqpds_id: data.hqpds_id || null,
   design_name: data.design_name,
   description: data.description || null,
   creation_date: data.creation_date || new Date().toISOString(),
   last_modified_date: new Date().toISOString(),
-  simulation_image_path: data.simulation_image_path || null,
-  simulation_image_name: data.simulation_image_name || null,
-  simulation_image_url: data.simulation_image_url || null,
-  simulation_image_size: data.simulation_image_size ? Number(data.simulation_image_size) : null,
-  pds_file_path: data.pds_file_path || null,
-  pds_file_name: data.pds_file_name || null,
-  pds_file_url: data.pds_file_url || null,
-  pds_file_size: data.pds_file_size ? Number(data.pds_file_size) : null,
+  image_file_design: Array.isArray(data.image_file_design) ? data.image_file_design : [],
+  pds_file: Array.isArray(data.pds_file) ? data.pds_file : [],
+  hcd_file: Array.isArray(data.hcd_file) ? data.hcd_file : [],
   configuration_mode: data.configuration_mode || null,
   estimated_knitting_time: data.estimated_knitting_time ? Number(data.estimated_knitting_time) : null,
+  thread_guide: Array.isArray(data.thread_guide) ? data.thread_guide : [],
+  stitch_density: Array.isArray(data.stitch_density) ? data.stitch_density : [],
+  garment_type: data.garment_type || null,
+  garment_size: data.garment_size || null,
   created_by_user: data.created_by_user || null,
   version: data.version ? Number(data.version) : 1,
   is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
@@ -608,15 +608,12 @@ export const useUpdateHqpdsConfigurationMutation = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }) => {
-      const payload = {
-        ...buildHqpdsConfigurationPayload(data),
-        version: Number(data.version || 0) + 1,
-      }
+      const { creation_date, ...rest } = buildHqpdsConfigurationPayload(data)
 
       const { data: updatedConfiguration, error } = await supabase
         .from('hqpds_configurations')
-        .update(payload)
-        .eq('id', id)
+        .update(rest)
+        .eq('id', Number(id))
         .select('*')
         .single()
       if (error) throw error
