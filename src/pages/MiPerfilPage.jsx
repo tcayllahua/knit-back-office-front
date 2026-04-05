@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import {
   Box,
   Card,
@@ -13,12 +13,21 @@ import {
   IconButton,
   Stack,
   Badge,
+  Autocomplete,
 } from '@mui/material'
 import { PhotoCamera as PhotoCameraIcon } from '@mui/icons-material'
 import { toast } from 'sonner'
 import { useAuthStore } from '../store/authStore'
 import { useGetUserProfile } from '../hooks/queries'
 import { useUpdateUserProfileMutation } from '../hooks/mutations'
+import countries from 'i18n-iso-countries'
+import esLocale from 'i18n-iso-countries/langs/es.json'
+
+countries.registerLocale(esLocale)
+
+const COUNTRY_LIST = Object.entries(countries.getNames('es', { select: 'official' }))
+  .map(([code, name]) => ({ code, name }))
+  .sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
 export const MiPerfilPage = () => {
   const user = useAuthStore((state) => state.user)
@@ -32,6 +41,7 @@ export const MiPerfilPage = () => {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -39,6 +49,7 @@ export const MiPerfilPage = () => {
       apellido: '',
       telefono: '',
       direccion: '',
+      country: null,
     },
   })
 
@@ -49,6 +60,9 @@ export const MiPerfilPage = () => {
         apellido: profile.apellido || '',
         telefono: profile.telefono || '',
         direccion: profile.direccion || '',
+        country: profile.country_code
+          ? COUNTRY_LIST.find(c => c.code === profile.country_code) || null
+          : null,
       })
       if (profile.foto_perfil) {
         setImagePreview(profile.foto_perfil)
@@ -71,7 +85,11 @@ export const MiPerfilPage = () => {
   const onSubmit = async (data) => {
     try {
       await updateMutation.mutateAsync({
-        profileData: data,
+        profileData: {
+          ...data,
+          country: data.country?.name || '',
+          country_code: data.country?.code || '',
+        },
         profileImage: profileImage || undefined,
       })
       setProfileImage(null)
@@ -243,6 +261,33 @@ export const MiPerfilPage = () => {
                   margin="normal"
                   error={!!errors.apellido}
                   helperText={errors.apellido?.message}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="country"
+                  control={control}
+                  rules={{ required: 'País es requerido' }}
+                  render={({ field: { onChange, value } }) => (
+                    <Autocomplete
+                      options={COUNTRY_LIST}
+                      getOptionLabel={(option) => option.name}
+                      value={value}
+                      onChange={(_, newValue) => onChange(newValue)}
+                      isOptionEqualToValue={(option, val) => option.code === val.code}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="País"
+                          size="small"
+                          margin="normal"
+                          error={!!errors.country}
+                          helperText={errors.country?.message}
+                        />
+                      )}
+                    />
+                  )}
                 />
               </Grid>
 

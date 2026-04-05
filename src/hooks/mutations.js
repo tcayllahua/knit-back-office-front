@@ -569,7 +569,7 @@ const buildHqpdsConfigurationPayload = (data) => ({
   stitch_density: Array.isArray(data.stitch_density) ? data.stitch_density : [],
   garment_type: data.garment_type || null,
   garment_size: data.garment_size || null,
-  created_by_user: data.created_by_user || null,
+  id_auth: data.id_auth || null,
   version: data.version ? Number(data.version) : 1,
   is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
 })

@@ -263,3 +263,22 @@ export const useGetHqpdsConfiguration = (id) => {
     staleTime: 5 * 60 * 1000,
   })
 }
+
+export const useGetNextHqpdsConfigurationId = (enabled = true) => {
+  return useQuery({
+    queryKey: ['hqpds-configurations-next-id'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hqpds_configurations')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single()
+      if (error && error.code === 'PGRST116') return 1
+      if (error) throw error
+      return (data?.id ?? 0) + 1
+    },
+    enabled,
+    staleTime: 0,
+  })
+}

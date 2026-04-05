@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Container,
@@ -11,10 +11,19 @@ import {
   InputAdornment,
   IconButton,
   Divider,
+  Autocomplete,
 } from '@mui/material'
 import { Visibility, VisibilityOff, Google } from '@mui/icons-material'
 import { toast } from 'sonner'
 import { useAuthStore } from '../store/authStore'
+import countries from 'i18n-iso-countries'
+import esLocale from 'i18n-iso-countries/langs/es.json'
+
+countries.registerLocale(esLocale)
+
+const COUNTRY_LIST = Object.entries(countries.getNames('es', { select: 'official' }))
+  .map(([code, name]) => ({ code, name }))
+  .sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
 export const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -26,6 +35,7 @@ export const RegisterPage = () => {
     register: registerField,
     handleSubmit,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -34,6 +44,7 @@ export const RegisterPage = () => {
       email: '',
       password: '',
       confirmPassword: '',
+      country: null,
     },
   })
 
@@ -44,6 +55,8 @@ export const RegisterPage = () => {
       await register(data.email, data.password, {
         nombre: data.nombre,
         apellido: data.apellido,
+        country: data.country?.name || '',
+        country_code: data.country?.code || '',
       })
       toast.success('Cuenta creada exitosamente. Por favor inicia sesión.')
       navigate('/login')
@@ -124,9 +137,10 @@ export const RegisterPage = () => {
             {
               ...registerField('password', {
                 required: 'Contraseña es requerida',
-                minLength: {
-                  value: 6,
-                  message: 'Mínimo 6 caracteres',
+                validate: (value) => {
+                  if (value.length >= 15) return true
+                  if (value.length >= 8 && /[a-z]/.test(value) && /[0-9]/.test(value)) return true
+                  return 'Debe tener al menos 15 caracteres, o al menos 8 caracteres incluyendo un número y una letra minúscula'
                 },
               })
             }
@@ -135,7 +149,7 @@ export const RegisterPage = () => {
             type={showPassword ? 'text' : 'password'}
             margin="normal"
             error={!!errors.password}
-            helperText={errors.password?.message}
+            helperText={errors.password?.message || 'Al menos 15 caracteres, o al menos 8 caracteres incluyendo un número y una letra minúscula.'}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -175,6 +189,30 @@ export const RegisterPage = () => {
                 </InputAdornment>
               ),
             }}
+          />
+
+          <Controller
+            name="country"
+            control={control}
+            rules={{ required: 'País es requerido' }}
+            render={({ field: { onChange, value } }) => (
+              <Autocomplete
+                options={COUNTRY_LIST}
+                getOptionLabel={(option) => option.name}
+                value={value}
+                onChange={(_, newValue) => onChange(newValue)}
+                isOptionEqualToValue={(option, val) => option.code === val.code}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="País"
+                    margin="normal"
+                    error={!!errors.country}
+                    helperText={errors.country?.message}
+                  />
+                )}
+              />
+            )}
           />
 
           <Button

@@ -68,6 +68,7 @@ export const HqpdsConfigurationsPage = () => {
 
   const columns = [
     { field: 'id', headerName: 'ID', width: 80 },
+    { field: 'hqpds_id', headerName: 'ID HQPDS', width: 120 },
     { field: 'design_name', headerName: 'Diseño', flex: 1, minWidth: 180 },
     { field: 'garment_type', headerName: 'Tipo de prenda', width: 160, valueFormatter: (value) => value || '-' },
     { field: 'version', headerName: 'Versión', width: 90 },
@@ -258,7 +259,6 @@ export const HqpdsConfigurationsPage = () => {
               width: 64,
               height: 64,
               borderRadius: '50%',
-              bgcolor: 'error.lighter',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

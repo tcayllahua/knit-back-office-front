@@ -30,7 +30,7 @@ DROP TABLE IF EXISTS public.hqpds_configurations CASCADE;
 -- Tabla de configuración principal HQPDS
 CREATE TABLE public.hqpds_configurations (
   id BIGSERIAL PRIMARY KEY,
-  hqpds_id VARCHAR(6),
+  hqpds_id VARCHAR(7),
   design_name VARCHAR(100) NOT NULL,
   description TEXT,
   creation_date TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -44,7 +44,7 @@ CREATE TABLE public.hqpds_configurations (
   stitch_density JSONB DEFAULT '[]'::jsonb,
   garment_type VARCHAR(50),
   garment_size VARCHAR(20),
-  created_by_user VARCHAR(100),
+  id_auth UUID REFERENCES public.usuarios(id_auth),
   version BIGINT DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),

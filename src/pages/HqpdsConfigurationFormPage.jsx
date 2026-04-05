@@ -41,7 +41,7 @@ import DeleteRowIcon from '@mui/icons-material/Delete'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../config/supabase'
-import { useGetHqpdsConfiguration, useGetUserProfile } from '../hooks/queries'
+import { useGetHqpdsConfiguration, useGetNextHqpdsConfigurationId } from '../hooks/queries'
 import {
   useCreateHqpdsConfigurationMutation,
   useUpdateHqpdsConfigurationMutation,
@@ -51,16 +51,16 @@ import imageCompression from 'browser-image-compression'
 
 const CONFIG_MODES = ['simulacion', 'produccion', 'prueba']
 const GARMENT_TYPES = ['Libre - LIB','Todo - TOD','Manga - MAN', 'Pecho - PEC', 'Espalda - ESP', 'Cuello - CUE', 'Bolsillo - BOL', 'Chalina - CHA']
+const SUB_GARMENT_TYPES = ['Manga - MAN', 'Pecho - PEC', 'Espalda - ESP', 'Cuello - CUE', 'Bolsillo - BOL', 'Chalina - CHA']
 const DENSITY_TYPES = ['DESPERDICIO', 'PRIMERA PASADA', 'PRETINA', 'CUERPO', 'REMALLE', 'ULTIMA PASADA', '1X1', '2X1', 'TUBULAR']
 
 const MODE_CODE_MAP = { simulacion: 'S', produccion: 'P', prueba: 'T' }
 
-const generateHqpdsId = (garmentType, configMode, version) => {
-  const garmentCode = garmentType ? garmentType.split(' - ').pop()?.trim() || '' : ''
-  const modeCode = MODE_CODE_MAP[configMode] || 'X'
-  const versionStr = String(Number(version) || 1).padStart(2, '0')
-  if (!garmentCode) return ''
-  return `${garmentCode}${modeCode}${versionStr}`
+const generateHqpdsId = (recordId, garmentType) => {
+  const numPart = recordId ? String(recordId).padStart(6, '0') : '??????'
+  const garmentInitial = garmentType ? garmentType.charAt(0).toUpperCase() : ''
+  if (!garmentInitial) return ''
+  return `${numPart}${garmentInitial}`
 }
 
 const COLOR_PALETTE = [
@@ -90,7 +90,7 @@ const DEFAULT_VALUES = {
   estimated_knitting_time: '',
   thread_guide: [],
   stitch_density: [],
-  created_by_user: '',
+  id_auth: '',
   is_active: true,
 }
 
@@ -110,10 +110,11 @@ export const HqpdsConfigurationFormPage = () => {
   const [simUploadError, setSimUploadError] = useState('')
   const [colorPickerAnchor, setColorPickerAnchor] = useState(null)
   const [colorPickerIndex, setColorPickerIndex] = useState(null)
+  const [subGarmentDialog, setSubGarmentDialog] = useState({ open: false, type: '', files: null, uploadType: '' })
   const user = useAuthStore((state) => state.user)
 
   const { data: configuration, isLoading: isConfigurationLoading } = useGetHqpdsConfiguration(id)
-  const { data: profile } = useGetUserProfile(user?.id)
+  const { data: nextId } = useGetNextHqpdsConfigurationId(!isEditMode)
   const createMutation = useCreateHqpdsConfigurationMutation()
   const updateMutation = useUpdateHqpdsConfigurationMutation()
   const [isNewVersioning, setIsNewVersioning] = useState(false)
@@ -128,26 +129,22 @@ export const HqpdsConfigurationFormPage = () => {
     formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm({ defaultValues: DEFAULT_VALUES })
 
-  const sessionUserName =
-    `${profile?.nombre || ''} ${profile?.apellido || ''}`.trim() ||
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email ||
-    ''
   const currentVersion = watch('version')
   const watchedGarmentType = watch('garment_type')
-  const watchedConfigMode = watch('configuration_mode')
+  const watchedGarmentSize = watch('garment_size')
+
+  const recordId = isEditMode ? id : nextId
 
   useEffect(() => {
-    const newId = generateHqpdsId(watchedGarmentType, watchedConfigMode, currentVersion)
+    const newId = generateHqpdsId(recordId, watchedGarmentType)
     setValue('hqpds_id', newId, { shouldDirty: false })
-  }, [watchedGarmentType, watchedConfigMode, currentVersion, setValue])
+  }, [recordId, watchedGarmentType, setValue])
 
   // Función para determinar si un campo debe estar deshabilitado
   const isFieldDisabled = (fieldName) => {
-    const alwaysDisabledFields = ['version', 'created_by_user']
+    const alwaysDisabledFields = ['version']
 
-    // Si es una NUEVA configuración, desbloqueamos todos excepto version y created_by_user
+    // Si es una NUEVA configuración, desbloqueamos todos excepto version
     if (!isEditMode) {
       return alwaysDisabledFields.includes(fieldName)
     }
@@ -197,17 +194,17 @@ export const HqpdsConfigurationFormPage = () => {
         estimated_knitting_time: configuration.estimated_knitting_time ?? '',
         thread_guide: Array.isArray(configuration.thread_guide) ? configuration.thread_guide : [],
         stitch_density: Array.isArray(configuration.stitch_density) ? configuration.stitch_density : [],
-        created_by_user: sessionUserName || configuration.created_by_user || '',
+        id_auth: configuration.id_auth || user?.id || '',
         is_active: configuration.is_active ?? true,
       })
     }
-  }, [configuration, reset, sessionUserName])
+  }, [configuration, reset, user])
 
   useEffect(() => {
-    if (sessionUserName) {
-      setValue('created_by_user', sessionUserName, { shouldDirty: false })
+    if (!isEditMode && user?.id) {
+      setValue('id_auth', user.id, { shouldDirty: false })
     }
-  }, [sessionUserName, setValue])
+  }, [isEditMode, user, setValue])
 
   useEffect(() => {
     if (!isEditMode) {
@@ -303,6 +300,18 @@ export const HqpdsConfigurationFormPage = () => {
       }
     }
 
+    const garmentCode = (watchedGarmentType || '').split(' - ').pop()?.trim() || ''
+    if (garmentCode === 'TOD' || garmentCode === 'LIB') {
+      setSubGarmentDialog({ open: true, type: '', files, uploadType: 'pds' })
+      e.target.value = ''
+      return
+    }
+
+    await executePdsUpload(files, garmentCode)
+    e.target.value = ''
+  }
+
+  const executePdsUpload = async (files, garmentCode) => {
     setPdsUploadError('')
     setPdsUploading(true)
     try {
@@ -310,11 +319,8 @@ export const HqpdsConfigurationFormPage = () => {
       const yyyy = now.getFullYear()
       const mm = String(now.getMonth() + 1).padStart(2, '0')
       const dd = String(now.getDate()).padStart(2, '0')
-      const hh = String(now.getHours()).padStart(2, '0')
-      const min = String(now.getMinutes()).padStart(2, '0')
-      const ss = String(now.getSeconds()).padStart(2, '0')
-      const configurationId = id || 'new'
-      const versionNumber = Number(currentVersion || 1)
+      const hqpdsId = watch('hqpds_id') || 'NEW'
+      const garmentLetter = garmentCode.charAt(0).toUpperCase()
 
       const currentFiles = watch('pds_file') || []
 
@@ -322,8 +328,7 @@ export const HqpdsConfigurationFormPage = () => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         const extension = file.name.includes('.') ? file.name.split('.').pop() : 'pds'
-        const index = currentFiles.length + i + 1
-        const generatedFileName = `${dd}${mm}${yyyy}-${hh}${min}${ss}-${configurationId}-v${versionNumber}-${index}.${extension}`
+        const generatedFileName = `${hqpdsId}${garmentLetter}.${extension}`
         const fileName = `PROCESSED/PDS/${yyyy}/${mm}/${dd}/${generatedFileName}`
         const { error: uploadError } = await supabase.storage
           .from('kinit-files-01')
@@ -338,6 +343,7 @@ export const HqpdsConfigurationFormPage = () => {
           pds_file_name: generatedFileName,
           pds_file_url: publicUrlData.publicUrl,
           pds_file_size: file.size,
+          garment_type_code: garmentCode,
         })
       }
 
@@ -347,7 +353,6 @@ export const HqpdsConfigurationFormPage = () => {
       setPdsUploadError(err.message || 'Error al subir el archivo PDS')
     } finally {
       setPdsUploading(false)
-      e.target.value = ''
     }
   }
 
@@ -364,6 +369,18 @@ export const HqpdsConfigurationFormPage = () => {
       }
     }
 
+    const garmentCode = (watchedGarmentType || '').split(' - ').pop()?.trim() || ''
+    if (garmentCode === 'TOD' || garmentCode === 'LIB') {
+      setSubGarmentDialog({ open: true, type: '', files, uploadType: 'hcd' })
+      e.target.value = ''
+      return
+    }
+
+    await executeHcdUpload(files, garmentCode)
+    e.target.value = ''
+  }
+
+  const executeHcdUpload = async (files, garmentCode) => {
     setHcdUploadError('')
     setHcdUploading(true)
     try {
@@ -371,11 +388,8 @@ export const HqpdsConfigurationFormPage = () => {
       const yyyy = now.getFullYear()
       const mm = String(now.getMonth() + 1).padStart(2, '0')
       const dd = String(now.getDate()).padStart(2, '0')
-      const hh = String(now.getHours()).padStart(2, '0')
-      const min = String(now.getMinutes()).padStart(2, '0')
-      const ss = String(now.getSeconds()).padStart(2, '0')
-      const configurationId = id || 'new'
-      const versionNumber = Number(currentVersion || 1)
+      const hqpdsId = watch('hqpds_id') || 'NEW'
+      const garmentLetter = garmentCode.charAt(0).toUpperCase()
 
       const currentFiles = watch('hcd_file') || []
 
@@ -383,8 +397,7 @@ export const HqpdsConfigurationFormPage = () => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         const extension = file.name.includes('.') ? file.name.split('.').pop() : 'hcd'
-        const index = currentFiles.length + i + 1
-        const generatedFileName = `${dd}${mm}${yyyy}-${hh}${min}${ss}-${configurationId}-v${versionNumber}-${index}.${extension}`
+        const generatedFileName = `${hqpdsId}${garmentLetter}.${extension}`
         const fileName = `PROCESSED/HCD/${yyyy}/${mm}/${dd}/${generatedFileName}`
         const { error: uploadError } = await supabase.storage
           .from('kinit-files-01')
@@ -399,6 +412,7 @@ export const HqpdsConfigurationFormPage = () => {
           hcd_file_name: generatedFileName,
           hcd_file_url: publicUrlData.publicUrl,
           hcd_file_size: file.size,
+          garment_type_code: garmentCode,
         })
       }
 
@@ -408,7 +422,6 @@ export const HqpdsConfigurationFormPage = () => {
       setHcdUploadError(err.message || 'Error al subir el archivo HCD')
     } finally {
       setHcdUploading(false)
-      e.target.value = ''
     }
   }
 
@@ -463,8 +476,13 @@ export const HqpdsConfigurationFormPage = () => {
         }
 
         const createdConfiguration = await createMutation.mutateAsync(newVersionPayload)
+        // Actualizar hqpds_id con el ID real del nuevo registro
+        const newVersionHqpdsId = generateHqpdsId(createdConfiguration.id, data.garment_type)
+        if (newVersionHqpdsId) {
+          await updateMutation.mutateAsync({ id: createdConfiguration.id, data: { ...data, hqpds_id: newVersionHqpdsId, version: createdConfiguration.version } })
+        }
         reset({
-          hqpds_id: createdConfiguration.hqpds_id ?? '',
+          hqpds_id: newVersionHqpdsId || (createdConfiguration.hqpds_id ?? ''),
           design_name: createdConfiguration.design_name ?? '',
           garment_type: createdConfiguration.garment_type ?? '',
           garment_size: createdConfiguration.garment_size ?? '',
@@ -483,7 +501,7 @@ export const HqpdsConfigurationFormPage = () => {
           estimated_knitting_time: createdConfiguration.estimated_knitting_time ?? '',
           thread_guide: Array.isArray(createdConfiguration.thread_guide) ? createdConfiguration.thread_guide : [],
           stitch_density: Array.isArray(createdConfiguration.stitch_density) ? createdConfiguration.stitch_density : [],
-          created_by_user: sessionUserName || createdConfiguration.created_by_user || '',
+          id_auth: createdConfiguration.id_auth || user?.id || '',
           is_active: createdConfiguration.is_active ?? true,
         })
         setValue('version', createdConfiguration.version, { shouldDirty: false })
@@ -520,7 +538,7 @@ export const HqpdsConfigurationFormPage = () => {
           estimated_knitting_time: updatedConfiguration.estimated_knitting_time ?? '',
           thread_guide: Array.isArray(updatedConfiguration.thread_guide) ? updatedConfiguration.thread_guide : [],
           stitch_density: Array.isArray(updatedConfiguration.stitch_density) ? updatedConfiguration.stitch_density : [],
-          created_by_user: sessionUserName || updatedConfiguration.created_by_user || '',
+          id_auth: updatedConfiguration.id_auth || user?.id || '',
           is_active: updatedConfiguration.is_active ?? true,
         })
         setValue('version', updatedConfiguration.version, { shouldDirty: false })
@@ -529,6 +547,11 @@ export const HqpdsConfigurationFormPage = () => {
       } else {
         // Crear nueva configuración
         const createdConfiguration = await createMutation.mutateAsync(data)
+        // Actualizar hqpds_id con el ID real del registro
+        const finalHqpdsId = generateHqpdsId(createdConfiguration.id, data.garment_type)
+        if (finalHqpdsId) {
+          await updateMutation.mutateAsync({ id: createdConfiguration.id, data: { ...data, hqpds_id: finalHqpdsId } })
+        }
         setValue('version', createdConfiguration.version, { shouldDirty: false })
         navigate(`/configuraciones/editar/${createdConfiguration.id}`)
         return
@@ -591,6 +614,8 @@ export const HqpdsConfigurationFormPage = () => {
                 disabled={isFieldDisabled('design_name')}
                 error={!!errors.design_name}
                 helperText={errors.design_name?.message}
+                inputProps={{ style: { textTransform: 'uppercase' } }}
+                onChange={(e) => setValue('design_name', e.target.value.toUpperCase(), { shouldDirty: true, shouldValidate: true })}
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -651,17 +676,6 @@ export const HqpdsConfigurationFormPage = () => {
                 InputLabelProps={{ shrink: true }}
                 helperText="Actualizada automáticamente"
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Creado por"
-                value={sessionUserName}
-                InputProps={{ readOnly: true }}
-                disabled
-                helperText="Tomado del usuario en sesión"
-              />
-              <input type="hidden" {...register('created_by_user')} />
             </Grid>
             <Grid item xs={12} sm={3}>
               <TextField
@@ -812,7 +826,7 @@ export const HqpdsConfigurationFormPage = () => {
                   <input
                     type="file"
                     hidden
-                    multiple
+                    accept=".pds"
                     onChange={handlePdsUpload}
                   />
                 </Button>
@@ -843,7 +857,7 @@ export const HqpdsConfigurationFormPage = () => {
                       <InsertDriveFileIcon color="primary" fontSize="small" />
                       <Box sx={{ overflow: 'hidden', flex: 1 }}>
                         <Typography variant="caption" color="primary" fontWeight={600}>
-                          PDS {idx + 1}
+                          PDS {idx + 1}{pds.garment_type_code ? ` (${pds.garment_type_code})` : ''}
                         </Typography>
                         <Typography variant="body2" noWrap fontWeight={500}>
                           {pds.pds_file_name}
@@ -909,7 +923,7 @@ export const HqpdsConfigurationFormPage = () => {
                   <input
                     type="file"
                     hidden
-                    multiple
+                    accept=".hcd"
                     onChange={handleHcdUpload}
                   />
                 </Button>
@@ -940,7 +954,7 @@ export const HqpdsConfigurationFormPage = () => {
                       <InsertDriveFileIcon color="primary" fontSize="small" />
                       <Box sx={{ overflow: 'hidden', flex: 1 }}>
                         <Typography variant="caption" color="primary" fontWeight={600}>
-                          HCD {idx + 1}
+                          HCD {idx + 1}{hcd.garment_type_code ? ` (${hcd.garment_type_code})` : ''}
                         </Typography>
                         <Typography variant="body2" noWrap fontWeight={500}>
                           {hcd.hcd_file_name}
@@ -1427,6 +1441,51 @@ export const HqpdsConfigurationFormPage = () => {
         <DialogActions>
           <Button type="button" onClick={() => setShowNoChangesModal(false)} autoFocus>
             Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={subGarmentDialog.open}
+        onClose={() => setSubGarmentDialog({ open: false, type: '', files: null, uploadType: '' })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Seleccionar tipo de sub-prenda</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            El tipo de prenda seleccionado es "Todo" o "Libre". Selecciona el tipo de sub-prenda para este archivo.
+          </DialogContentText>
+          <TextField
+            select
+            fullWidth
+            label="Tipo de sub-prenda"
+            value={subGarmentDialog.type}
+            onChange={(e) => setSubGarmentDialog(prev => ({ ...prev, type: e.target.value }))}
+          >
+            {SUB_GARMENT_TYPES.map(t => (
+              <MenuItem key={t} value={t}>{t}</MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSubGarmentDialog({ open: false, type: '', files: null, uploadType: '' })}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!subGarmentDialog.type}
+            onClick={() => {
+              const garmentCode = subGarmentDialog.type.split(' - ')[0].charAt(0).toUpperCase()
+              if (subGarmentDialog.uploadType === 'pds') {
+                executePdsUpload(subGarmentDialog.files, garmentCode)
+              } else {
+                executeHcdUpload(subGarmentDialog.files, garmentCode)
+              }
+              setSubGarmentDialog({ open: false, type: '', files: null, uploadType: '' })
+            }}
+          >
+            Confirmar
           </Button>
         </DialogActions>
       </Dialog>
