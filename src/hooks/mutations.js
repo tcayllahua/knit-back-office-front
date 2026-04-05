@@ -88,15 +88,15 @@ export const useUpdateUserProfileMutation = (userId) => {
           // Upload to storage
           const fileName = `${userId}_${Date.now()}`
           const { error: uploadError } = await supabase.storage
-            .from('usuarios')
-            .upload(`usuarios/${fileName}`, compressedFile)
+            .from('kinit-files-01')
+            .upload(`profile-photos/${fileName}`, compressedFile)
 
           if (uploadError) throw uploadError
 
           // Get public URL and update database
           const { data: publicUrlData } = supabase.storage
-            .from('usuarios')
-            .getPublicUrl(`usuarios/${fileName}`)
+            .from('kinit-files-01')
+            .getPublicUrl(`profile-photos/${fileName}`)
 
           const { error: urlUpdateError } = await supabase
             .from('usuarios')
@@ -105,8 +105,8 @@ export const useUpdateUserProfileMutation = (userId) => {
 
           if (urlUpdateError) throw urlUpdateError
         } catch (imageError) {
-          console.error('Erro ao processar imagem:', imageError)
-          throw new Error('Erro ao fazer upload da foto')
+          console.error('Error al procesar imagen:', imageError)
+          throw new Error('Error al subir la foto de perfil')
         }
       }
 
@@ -114,10 +114,10 @@ export const useUpdateUserProfileMutation = (userId) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', userId] })
-      toast.success('Perfil atualizado com sucesso')
+      toast.success('Perfil actualizado exitosamente')
     },
     onError: (error) => {
-      toast.error(error.message || 'Erro ao atualizar perfil')
+      toast.error(error.message || 'Error al actualizar perfil')
     },
   })
 }

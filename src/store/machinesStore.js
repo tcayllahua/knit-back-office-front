@@ -13,7 +13,7 @@ const buildMachinePayload = (machineData) => ({
   machine_model: machineData.machine_model || null,
   hqpds_configuration_id: Number(machineData.hqpds_configuration_id),
   is_primary: Boolean(machineData.is_primary),
-  maintenance_status: machineData.maintenance_status || null,
+  maintenance_status: machineData.maintenance_status ? machineData.maintenance_status.toLowerCase() : null,
   calibration_date: machineData.calibration_date || null,
   notes: machineData.notes || null,
 })
