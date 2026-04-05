@@ -9,11 +9,26 @@ export const useAuthStore = create(
       loading: true,
       error: null,
       authenticated: false,
+      userRole: null,
 
       setUser: (user) => set({ user, authenticated: !!user }),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
+
+      fetchUserRole: async (userId) => {
+        try {
+          const { data, error } = await supabase
+            .from('usuarios')
+            .select('roles(nombre)')
+            .eq('id_auth', userId)
+            .single()
+          if (error) return null
+          return data?.roles?.nombre || null
+        } catch {
+          return null
+        }
+      },
 
       initializeAuth: async () => {
         try {
@@ -26,13 +41,18 @@ export const useAuthStore = create(
           if (error) throw error
 
           if (session?.user) {
-            set({ user: session.user, authenticated: true })
+            const { data: userData } = await supabase
+              .from('usuarios')
+              .select('roles(nombre)')
+              .eq('id_auth', session.user.id)
+              .single()
+            const roleName = userData?.roles?.nombre || null
+            set({ user: session.user, authenticated: true, userRole: roleName })
           } else {
-            // Clear persisted auth when there is no valid Supabase session
-            set({ user: null, authenticated: false })
+            set({ user: null, authenticated: false, userRole: null })
           }
         } catch (err) {
-          set({ error: err.message, user: null, authenticated: false })
+          set({ error: err.message, user: null, authenticated: false, userRole: null })
         } finally {
           set({ loading: false })
         }
@@ -48,7 +68,14 @@ export const useAuthStore = create(
 
           if (error) throw error
 
-          set({ user: data.user, authenticated: true })
+          const { data: userData } = await supabase
+            .from('usuarios')
+            .select('roles(nombre)')
+            .eq('id_auth', data.user.id)
+            .single()
+          const roleName = userData?.roles?.nombre || null
+
+          set({ user: data.user, authenticated: true, userRole: roleName })
           return data.user
         } catch (err) {
           const message = err.message || 'Error al iniciar sesión'
@@ -131,12 +158,20 @@ export const useAuthStore = create(
 
           if (error) throw error
 
+          // Get default role (usuario)
+          const { data: defaultRole } = await supabase
+            .from('roles')
+            .select('id')
+            .eq('nombre', 'usuario')
+            .single()
+
           // Insert user data into usuarios table
           const { error: insertError } = await supabase.from('usuarios').insert({
             id_auth: data.user.id,
             email,
             nombre: userData.nombre,
             apellido: userData.apellido,
+            rol_id: defaultRole?.id || null,
           })
 
           if (insertError) throw insertError
@@ -158,7 +193,7 @@ export const useAuthStore = create(
 
           if (error) throw error
 
-          set({ user: null, authenticated: false })
+          set({ user: null, authenticated: false, userRole: null })
         } catch (err) {
           set({ error: err.message })
           throw err
@@ -172,6 +207,7 @@ export const useAuthStore = create(
       partialize: (state) => ({
         authenticated: state.authenticated,
         user: state.user,
+        userRole: state.userRole,
       }),
     }
   )

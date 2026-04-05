@@ -38,11 +38,32 @@ import {
   VpnKey as VpnKeyIcon,
   Cable as CableIcon,
   LocalShipping as LocalShippingIcon,
+  People as PeopleIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
 } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore } from '../store/themeStore'
+import { useGetUserPermissions } from '../hooks/queries'
 
 const DRAWER_WIDTH = 280
+
+const ICON_MAP = {
+  Dashboard: <DashboardIcon />,
+  PrecisionManufacturing: <PrecisionManufacturingIcon />,
+  Checkroom: <CheckroomIcon />,
+  Insights: <InsightsIcon />,
+  Inventory2: <Inventory2Icon />,
+  SdStorage: <SdStorageIcon />,
+  Cable: <CableIcon />,
+  LocalShipping: <LocalShippingIcon />,
+  People: <PeopleIcon />,
+  AdminPanelSettings: <AdminPanelSettingsIcon />,
+}
+
+// Routes that go into the "Configuraciones" collapsible group
+const SETTINGS_ROUTES = ['/hilos', '/proveedores']
+// Routes that go into the "Administración" collapsible group
+const ADMIN_ROUTES = ['/admin/usuarios', '/admin/roles']
 
 export const DashboardLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -53,6 +74,9 @@ export const DashboardLayout = () => {
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(
     location.pathname.startsWith('/hilos') || location.pathname.startsWith('/proveedores')
   )
+  const [adminMenuOpen, setAdminMenuOpen] = useState(
+    location.pathname.startsWith('/admin')
+  )
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   
@@ -60,6 +84,7 @@ export const DashboardLayout = () => {
   const logout = useAuthStore((state) => state.logout)
   const darkMode = useThemeStore((state) => state.darkMode)
   const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode)
+  const { data: permissionsData } = useGetUserPermissions(user?.id)
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -83,25 +108,42 @@ export const DashboardLayout = () => {
     handleMenuClose()
   }
 
-  const navigationItems = [
-    { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { label: 'Máquinas', icon: <PrecisionManufacturingIcon />, path: '/maquinas' },
-    { label: 'Prendas', icon: <CheckroomIcon />, path: '/prendas' },
-    { label: 'Tejido', icon: <InsightsIcon />, path: '/tejido' },
-    { label: 'Materiales', icon: <Inventory2Icon />, path: '/materiales' },
-    { label: 'Programa Hqpds', icon: <SdStorageIcon />, path: '/configuraciones' },
-  ]
+  const navigationItems = (permissionsData?.permissions || [])
+    .filter((p) => p.puede_ver && !SETTINGS_ROUTES.includes(p.ruta) && !ADMIN_ROUTES.includes(p.ruta))
+    .map((p) => ({
+      label: p.nombre,
+      icon: ICON_MAP[p.icono] || <DashboardIcon />,
+      path: p.ruta,
+    }))
 
-  const settingsSubItems = [
-    { label: 'Hilos', icon: <CableIcon fontSize="small" />, path: '/hilos' },
-    { label: 'Proveedores', icon: <LocalShippingIcon fontSize="small" />, path: '/proveedores' },
-  ]
+  const settingsSubItems = (permissionsData?.permissions || [])
+    .filter((p) => p.puede_ver && SETTINGS_ROUTES.includes(p.ruta))
+    .map((p) => ({
+      label: p.nombre,
+      icon: ICON_MAP[p.icono] ? <p.icono /> : <CableIcon fontSize="small" />,
+      path: p.ruta,
+    }))
+    // Use proper icons for settings sub-items
+    .map((item) => ({
+      ...item,
+      icon: ICON_MAP[(permissionsData?.permissions || []).find((p) => p.ruta === item.path)?.icono] || <CableIcon fontSize="small" />,
+    }))
+
+  const adminSubItems = (permissionsData?.permissions || [])
+    .filter((p) => p.puede_ver && ADMIN_ROUTES.includes(p.ruta))
+    .map((p) => ({
+      label: p.nombre,
+      icon: ICON_MAP[p.icono] || <AdminPanelSettingsIcon fontSize="small" />,
+      path: p.ruta,
+    }))
 
   const currentPageLabel = (() => {
     if (location.pathname.startsWith('/configuraciones')) return 'Programa Hqpds'
     if (location.pathname.startsWith('/materiales')) return 'Materiales'
     if (location.pathname.startsWith('/hilos')) return 'Hilos'
     if (location.pathname.startsWith('/proveedores')) return 'Proveedores'
+    if (location.pathname.startsWith('/admin/usuarios')) return 'Gestión de Usuarios'
+    if (location.pathname.startsWith('/admin/roles')) return 'Gestión de Roles'
     return navigationItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'
   })()
 
@@ -168,74 +210,148 @@ export const DashboardLayout = () => {
             )
           })}
 
-          <ListItem disablePadding>
-            <ListItemButton
-              onClick={() => setSettingsMenuOpen(!settingsMenuOpen)}
-              sx={{
-                minHeight: 52,
-                px: 1.5,
-                borderRadius: 2.5,
-                bgcolor:
-                  location.pathname.startsWith('/hilos') || location.pathname.startsWith('/proveedores')
-                    ? 'action.hover'
-                    : 'transparent',
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                <Box
+          {settingsSubItems.length > 0 && (
+            <>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => setSettingsMenuOpen(!settingsMenuOpen)}
                   sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 2,
-                    display: 'grid',
-                    placeItems: 'center',
-                    bgcolor: 'action.hover',
+                    minHeight: 52,
+                    px: 1.5,
+                    borderRadius: 2.5,
+                    bgcolor:
+                      location.pathname.startsWith('/hilos') || location.pathname.startsWith('/proveedores')
+                        ? 'action.hover'
+                        : 'transparent',
                   }}
                 >
-                  <Inventory2Icon />
-                </Box>
-              </ListItemIcon>
-              <ListItemText primary="Configuraciones" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
-              {settingsMenuOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-            </ListItemButton>
-          </ListItem>
-
-          <Collapse in={settingsMenuOpen} timeout="auto" unmountOnExit>
-            <List sx={{ py: 0, pl: 2 }}>
-              {settingsSubItems.map((subItem) => {
-                const isSubActive = location.pathname === subItem.path
-
-                return (
-                  <ListItem key={subItem.path} disablePadding>
-                    <ListItemButton
-                      onClick={() => {
-                        navigate(subItem.path)
-                        setMobileOpen(false)
-                      }}
+                  <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                    <Box
                       sx={{
-                        minHeight: 42,
-                        px: 1.5,
+                        width: 32,
+                        height: 32,
                         borderRadius: 2,
-                        bgcolor: isSubActive ? 'primary.main' : 'transparent',
-                        color: isSubActive ? 'primary.contrastText' : 'text.secondary',
-                        '&:hover': {
-                          bgcolor: isSubActive ? 'primary.dark' : 'action.hover',
-                        },
+                        display: 'grid',
+                        placeItems: 'center',
+                        bgcolor: 'action.hover',
                       }}
                     >
-                      <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
-                        {subItem.icon}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={subItem.label}
-                        primaryTypographyProps={{ fontSize: 13, fontWeight: isSubActive ? 700 : 500 }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                )
-              })}
-            </List>
-          </Collapse>
+                      <Inventory2Icon />
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText primary="Configuraciones" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
+                  {settingsMenuOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                </ListItemButton>
+              </ListItem>
+
+              <Collapse in={settingsMenuOpen} timeout="auto" unmountOnExit>
+                <List sx={{ py: 0, pl: 2 }}>
+                  {settingsSubItems.map((subItem) => {
+                    const isSubActive = location.pathname === subItem.path
+
+                    return (
+                      <ListItem key={subItem.path} disablePadding>
+                        <ListItemButton
+                          onClick={() => {
+                            navigate(subItem.path)
+                            setMobileOpen(false)
+                          }}
+                          sx={{
+                            minHeight: 42,
+                            px: 1.5,
+                            borderRadius: 2,
+                            bgcolor: isSubActive ? 'primary.main' : 'transparent',
+                            color: isSubActive ? 'primary.contrastText' : 'text.secondary',
+                            '&:hover': {
+                              bgcolor: isSubActive ? 'primary.dark' : 'action.hover',
+                            },
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                            {subItem.icon}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={subItem.label}
+                            primaryTypographyProps={{ fontSize: 13, fontWeight: isSubActive ? 700 : 500 }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    )
+                  })}
+                </List>
+              </Collapse>
+            </>
+          )}
+
+          {adminSubItems.length > 0 && (
+            <>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                  sx={{
+                    minHeight: 52,
+                    px: 1.5,
+                    borderRadius: 2.5,
+                    bgcolor: location.pathname.startsWith('/admin') ? 'action.hover' : 'transparent',
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 2,
+                        display: 'grid',
+                        placeItems: 'center',
+                        bgcolor: 'action.hover',
+                      }}
+                    >
+                      <AdminPanelSettingsIcon />
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText primary="Administración" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
+                  {adminMenuOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                </ListItemButton>
+              </ListItem>
+
+              <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
+                <List sx={{ py: 0, pl: 2 }}>
+                  {adminSubItems.map((subItem) => {
+                    const isSubActive = location.pathname === subItem.path
+
+                    return (
+                      <ListItem key={subItem.path} disablePadding>
+                        <ListItemButton
+                          onClick={() => {
+                            navigate(subItem.path)
+                            setMobileOpen(false)
+                          }}
+                          sx={{
+                            minHeight: 42,
+                            px: 1.5,
+                            borderRadius: 2,
+                            bgcolor: isSubActive ? 'primary.main' : 'transparent',
+                            color: isSubActive ? 'primary.contrastText' : 'text.secondary',
+                            '&:hover': {
+                              bgcolor: isSubActive ? 'primary.dark' : 'action.hover',
+                            },
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                            {subItem.icon}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={subItem.label}
+                            primaryTypographyProps={{ fontSize: 13, fontWeight: isSubActive ? 700 : 500 }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    )
+                  })}
+                </List>
+              </Collapse>
+            </>
+          )}
         </List>
       </Box>
 

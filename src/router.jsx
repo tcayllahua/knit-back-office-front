@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { DashboardLayout } from './components/DashboardLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { RoutePermissionGuard } from './components/RoutePermissionGuard'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -21,6 +22,8 @@ import { HqpdsConfigurationsPage } from './pages/HqpdsConfigurationsPage'
 import { HqpdsConfigurationFormPage } from './pages/HqpdsConfigurationFormPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
+import { UsersManagementPage } from './pages/UsersManagementPage'
+import { RolesManagementPage } from './pages/RolesManagementPage'
 
 export const router = createBrowserRouter([
   {
@@ -45,19 +48,19 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: <RoutePermissionGuard route="/"><DashboardPage /></RoutePermissionGuard>,
       },
       {
         path: 'maquinas',
-        element: <MaquinasPage />,
+        element: <RoutePermissionGuard route="/maquinas"><MaquinasPage /></RoutePermissionGuard>,
       },
       {
         path: 'maquinas/nueva',
-        element: <MaquinaFormPage />,
+        element: <RoutePermissionGuard route="/maquinas"><MaquinaFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'maquinas/editar/:id',
-        element: <MaquinaFormPage />,
+        element: <RoutePermissionGuard route="/maquinas"><MaquinaFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'perfil',
@@ -69,75 +72,83 @@ export const router = createBrowserRouter([
       },
       {
         path: 'prendas',
-        element: <GarmentParametersPage />,
+        element: <RoutePermissionGuard route="/prendas"><GarmentParametersPage /></RoutePermissionGuard>,
       },
       {
         path: 'prendas/nueva',
-        element: <GarmentParameterFormPage />,
+        element: <RoutePermissionGuard route="/prendas"><GarmentParameterFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'prendas/editar/:id',
-        element: <GarmentParameterFormPage />,
+        element: <RoutePermissionGuard route="/prendas"><GarmentParameterFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'tejido',
-        element: <KnittingParametersPage />,
+        element: <RoutePermissionGuard route="/tejido"><KnittingParametersPage /></RoutePermissionGuard>,
       },
       {
         path: 'tejido/nueva',
-        element: <KnittingParameterFormPage />,
+        element: <RoutePermissionGuard route="/tejido"><KnittingParameterFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'tejido/editar/:id',
-        element: <KnittingParameterFormPage />,
+        element: <RoutePermissionGuard route="/tejido"><KnittingParameterFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'materiales',
-        element: <MaterialParametersPage />,
+        element: <RoutePermissionGuard route="/materiales"><MaterialParametersPage /></RoutePermissionGuard>,
       },
       {
         path: 'materiales/nueva',
-        element: <MaterialParameterFormPage />,
+        element: <RoutePermissionGuard route="/materiales"><MaterialParameterFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'materiales/editar/:id',
-        element: <MaterialParameterFormPage />,
+        element: <RoutePermissionGuard route="/materiales"><MaterialParameterFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'hilos',
-        element: <HilosPage />,
+        element: <RoutePermissionGuard route="/hilos"><HilosPage /></RoutePermissionGuard>,
       },
       {
         path: 'hilos/nuevo',
-        element: <HiloFormPage />,
+        element: <RoutePermissionGuard route="/hilos"><HiloFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'hilos/editar/:id',
-        element: <HiloFormPage />,
+        element: <RoutePermissionGuard route="/hilos"><HiloFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'proveedores',
-        element: <ProveedoresPage />,
+        element: <RoutePermissionGuard route="/proveedores"><ProveedoresPage /></RoutePermissionGuard>,
       },
       {
         path: 'proveedores/nuevo',
-        element: <ProveedorFormPage />,
+        element: <RoutePermissionGuard route="/proveedores"><ProveedorFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'proveedores/editar/:id',
-        element: <ProveedorFormPage />,
+        element: <RoutePermissionGuard route="/proveedores"><ProveedorFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'configuraciones',
-        element: <HqpdsConfigurationsPage />,
+        element: <RoutePermissionGuard route="/configuraciones"><HqpdsConfigurationsPage /></RoutePermissionGuard>,
       },
       {
         path: 'configuraciones/nueva',
-        element: <HqpdsConfigurationFormPage />,
+        element: <RoutePermissionGuard route="/configuraciones"><HqpdsConfigurationFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'configuraciones/editar/:id',
-        element: <HqpdsConfigurationFormPage />,
+        element: <RoutePermissionGuard route="/configuraciones"><HqpdsConfigurationFormPage /></RoutePermissionGuard>,
+      },
+      {
+        path: 'admin/usuarios',
+        element: <RoutePermissionGuard route="/admin/usuarios"><UsersManagementPage /></RoutePermissionGuard>,
+      },
+      {
+        path: 'admin/roles',
+        element: <RoutePermissionGuard route="/admin/roles"><RolesManagementPage /></RoutePermissionGuard>,
       },
     ],
   },

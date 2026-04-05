@@ -14,6 +14,7 @@ import {
   Stack,
   Badge,
   Autocomplete,
+  Chip,
 } from '@mui/material'
 import { PhotoCamera as PhotoCameraIcon } from '@mui/icons-material'
 import { toast } from 'sonner'
@@ -199,6 +200,19 @@ export const MiPerfilPage = () => {
               margin="normal"
               helperText="No editable"
             />
+
+            {profile?.roles?.nombre && (
+              <Box sx={{ mt: 2, mb: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  Rol
+                </Typography>
+                <Chip
+                  label={profile.roles.nombre.charAt(0).toUpperCase() + profile.roles.nombre.slice(1)}
+                  color="primary"
+                  variant="outlined"
+                />
+              </Box>
+            )}
 
             {profile?.fecha_registro && (
               <TextField

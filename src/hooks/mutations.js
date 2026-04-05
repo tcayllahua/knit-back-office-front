@@ -657,3 +657,140 @@ export const useDeleteHqpdsConfigurationMutation = () => {
     },
   })
 }
+
+// =============================================
+// RBAC Mutations
+// =============================================
+
+const buildRolePayload = (data) => ({
+  nombre: (data.nombre || '').trim().toLowerCase(),
+  descripcion: (data.descripcion || '').trim() || null,
+  is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+})
+
+export const useCreateRoleMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data) => {
+      const { data: created, error } = await supabase
+        .from('roles')
+        .insert(buildRolePayload(data))
+        .select('*')
+        .single()
+      if (error) throw error
+      return created
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      toast.success('Rol creado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al crear el rol')
+    },
+  })
+}
+
+export const useUpdateRoleMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { error } = await supabase
+        .from('roles')
+        .update(buildRolePayload(data))
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      toast.success('Rol actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el rol')
+    },
+  })
+}
+
+export const useDeleteRoleMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('roles')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      toast.success('Rol eliminado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al eliminar el rol')
+    },
+  })
+}
+
+export const useUpdateRolePermissionsMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ rolId, permisos }) => {
+      // Delete existing permissions for this role
+      const { error: deleteError } = await supabase
+        .from('rol_formulario')
+        .delete()
+        .eq('rol_id', rolId)
+      if (deleteError) throw deleteError
+
+      // Insert new permissions
+      if (permisos.length > 0) {
+        const payload = permisos.map((p) => ({
+          rol_id: rolId,
+          formulario_id: p.formulario_id,
+          puede_ver: Boolean(p.puede_ver),
+          puede_crear: Boolean(p.puede_crear),
+          puede_editar: Boolean(p.puede_editar),
+          puede_eliminar: Boolean(p.puede_eliminar),
+        }))
+        const { error: insertError } = await supabase
+          .from('rol_formulario')
+          .insert(payload)
+        if (insertError) throw insertError
+      }
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['role', variables.rolId] })
+      queryClient.invalidateQueries({ queryKey: ['user-permissions'] })
+      toast.success('Permisos del rol actualizados exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar los permisos del rol')
+    },
+  })
+}
+
+export const useUpdateUserRoleMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ userId, rolId }) => {
+      const { error } = await supabase
+        .from('usuarios')
+        .update({ rol_id: rolId })
+        .eq('id', userId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] })
+      queryClient.invalidateQueries({ queryKey: ['user-permissions'] })
+      toast.success('Rol del usuario actualizado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al actualizar el rol del usuario')
+    },
+  })
+}

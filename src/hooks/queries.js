@@ -39,7 +39,7 @@ export const useGetUserProfile = (userId) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('usuarios')
-        .select('*')
+        .select('*, roles(nombre)')
         .eq('id_auth', userId)
         .single()
       if (error) throw error
@@ -280,5 +280,105 @@ export const useGetNextHqpdsConfigurationId = (enabled = true) => {
     },
     enabled,
     staleTime: 0,
+  })
+}
+
+// =============================================
+// RBAC Queries
+// =============================================
+
+export const useGetRoles = () => {
+  return useQuery({
+    queryKey: ['roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .order('nombre', { ascending: true })
+      if (error) throw error
+      return data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export const useGetRole = (id) => {
+  return useQuery({
+    queryKey: ['role', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*, rol_formulario(*, formularios(*))')
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      return data
+    },
+    enabled: !!id,
+  })
+}
+
+export const useGetFormularios = () => {
+  return useQuery({
+    queryKey: ['formularios'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('formularios')
+        .select('*')
+        .order('orden', { ascending: true })
+      if (error) throw error
+      return data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export const useGetUserPermissions = (userId) => {
+  return useQuery({
+    queryKey: ['user-permissions', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('rol_id, roles(nombre, rol_formulario(puede_ver, puede_crear, puede_editar, puede_eliminar, formularios(nombre, ruta, icono, orden, is_active)))')
+        .eq('id_auth', userId)
+        .single()
+      if (error) throw error
+
+      const role = data?.roles
+      if (!role) return { roleName: null, permissions: [] }
+
+      const permissions = (role.rol_formulario || [])
+        .filter((rf) => rf.formularios?.is_active)
+        .map((rf) => ({
+          ruta: rf.formularios.ruta,
+          nombre: rf.formularios.nombre,
+          icono: rf.formularios.icono,
+          orden: rf.formularios.orden,
+          puede_ver: rf.puede_ver,
+          puede_crear: rf.puede_crear,
+          puede_editar: rf.puede_editar,
+          puede_eliminar: rf.puede_eliminar,
+        }))
+        .sort((a, b) => a.orden - b.orden)
+
+      return { roleName: role.nombre, permissions }
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export const useGetAllUsers = () => {
+  return useQuery({
+    queryKey: ['all-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*, roles(nombre)')
+        .order('nombre', { ascending: true })
+      if (error) throw error
+      return data
+    },
+    staleTime: 5 * 60 * 1000,
   })
 }
