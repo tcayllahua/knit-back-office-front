@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -26,22 +26,45 @@ import {
   WarningAmberRounded as WarningIcon,
   Image as ImageIcon,
   Close as CloseIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetHqpdsConfigurations } from '../hooks/queries'
 import { useDeleteHqpdsConfigurationMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 export const HqpdsConfigurationsPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [filterMode, setFilterMode] = useState('')
   const [filterActive, setFilterActive] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
   const [previewImages, setPreviewImages] = useState(null)
+  const [starred, setStarred] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hqpds-starred') || '[]')
+    } catch { return [] }
+  })
+  const [filterStarred, setFilterStarred] = useState(false)
+  const [filterRecent, setFilterRecent] = useState(false)
 
   const { data: items = [], isLoading } = useGetHqpdsConfigurations()
   const deleteMutation = useDeleteHqpdsConfigurationMutation()
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/configuraciones/nueva')}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nuevo Programa
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions, navigate])
 
   const filtered = items.filter((item) => {
     const matchesSearch =
@@ -55,6 +78,19 @@ export const HqpdsConfigurationsPage = () => {
     return matchesSearch && matchesMode && matchesActive
   })
 
+  const filteredAfterStarred = filterStarred ? filtered.filter((item) => starred.includes(item.id)) : filtered
+  const filteredFinal = filterRecent
+    ? [...filteredAfterStarred].sort((a, b) => new Date(b.updated_at || b.creation_date) - new Date(a.updated_at || a.creation_date)).slice(0, 10)
+    : filteredAfterStarred
+
+  const toggleStar = (id) => {
+    setStarred((prev) => {
+      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+      localStorage.setItem('hqpds-starred', JSON.stringify(next))
+      return next
+    })
+  }
+
   const handleDeleteClick = (row) => {
     setSelectedItem(row)
     setDeleteDialogOpen(true)
@@ -67,16 +103,42 @@ export const HqpdsConfigurationsPage = () => {
   }
 
   const columns = [
-    { field: 'id', headerName: 'ID', width: 80 },
-    { field: 'hqpds_id', headerName: 'ID HQPDS', width: 120 },
+    { field: 'hqpds_id', headerName: 'ID HQPDS', width: 90, align: 'center', headerAlign: 'center' },
     { field: 'design_name', headerName: 'Diseño', flex: 1, minWidth: 180 },
-    { field: 'garment_type', headerName: 'Tipo de prenda', width: 160, valueFormatter: (value) => value || '-' },
-    { field: 'version', headerName: 'Versión', width: 90 },
-    { field: 'configuration_mode', headerName: 'Modo', width: 140 },
+    {
+      field: 'starred',
+      headerName: '',
+      width: 50,
+      sortable: false,
+      disableColumnMenu: true,
+      renderCell: (params) => {
+        const isStarred = starred.includes(params.row.id)
+        return (
+          <IconButton
+            size="small"
+            onClick={(e) => { e.stopPropagation(); toggleStar(params.row.id) }}
+            title={isStarred ? 'Quitar destacado' : 'Destacar'}
+            sx={{
+              color: isStarred ? '#1e1e1e' : 'action.disabled',
+              opacity: isStarred ? 1 : 0,
+              transition: 'opacity 0.15s',
+              '.MuiDataGrid-row:hover &': { opacity: 1 },
+            }}
+          >
+            {isStarred ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+          </IconButton>
+        )
+      },
+    },
+    { field: 'garment_type', headerName: 'Tipo de prenda', width: 120, align: 'center', headerAlign: 'center', valueFormatter: (value) => value || '-' },
+    { field: 'version', headerName: 'Versión', width: 70, align: 'center', headerAlign: 'center' },
+    { field: 'configuration_mode', headerName: 'Modo', width: 100, align: 'center', headerAlign: 'center' },
     {
       field: 'is_active',
       headerName: 'Estado',
-      width: 110,
+      width: 80,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
         <Chip
           label={params.value ? 'Activa' : 'Inactiva'}
@@ -88,15 +150,17 @@ export const HqpdsConfigurationsPage = () => {
     {
       field: 'creation_date',
       headerName: 'Fecha de creación',
-      width: 170,
+      width: 150,
+      align: 'center',
+      headerAlign: 'center',
       valueFormatter: (value) => (value ? new Date(value).toLocaleString('es-ES') : '-'),
     },
     {
       field: 'acciones',
       headerName: 'Acciones',
-      width: 150,
-      align: 'left',
-      headerAlign: 'left',
+      width: 110,
+      align: 'center',
+      headerAlign: 'center',
       sortable: false,
       renderCell: (params) => (
         <Box
@@ -105,7 +169,7 @@ export const HqpdsConfigurationsPage = () => {
             height: '100%',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-start',
+            justifyContent: 'center',
             gap: 1,
           }}
         >
@@ -128,7 +192,6 @@ export const HqpdsConfigurationsPage = () => {
               size="small"
               onClick={(e) => { e.stopPropagation(); setPreviewImages(params.row.image_file_design) }}
               title="Ver imágenes"
-              color="primary"
             >
               <ImageIcon fontSize="small" />
             </IconButton>
@@ -139,18 +202,24 @@ export const HqpdsConfigurationsPage = () => {
   ]
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/configuraciones/nueva')}>
-          Nuevo Programa HQPDS
-        </Button>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
           placeholder="Buscar por diseño o usuario"
           size="small"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          sx={{ minWidth: 240 }}
+          sx={{
+            flex: 1,
+            minWidth: 280,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 6,
+              bgcolor: '#fff',
+              '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+              '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.3)' },
+              '&.Mui-focused fieldset': { borderColor: '#1e1e1e', borderWidth: 1.5 },
+            },
+          }}
         />
 
         <FormControl sx={{ minWidth: 150 }}>
@@ -160,6 +229,13 @@ export const HqpdsConfigurationsPage = () => {
             label="Modo"
             onChange={(e) => setFilterMode(e.target.value)}
             size="small"
+            sx={{
+              borderRadius: 6,
+              bgcolor: '#fff',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.15)' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.3)' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1e1e1e', borderWidth: 1.5 },
+            }}
           >
             <MenuItem value="">Todos</MenuItem>
             <MenuItem value="simulacion">Simulación</MenuItem>
@@ -175,6 +251,13 @@ export const HqpdsConfigurationsPage = () => {
             label="Estado"
             onChange={(e) => setFilterActive(e.target.value)}
             size="small"
+            sx={{
+              borderRadius: 6,
+              bgcolor: '#fff',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.15)' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.3)' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1e1e1e', borderWidth: 1.5 },
+            }}
           >
             <MenuItem value="">Todos</MenuItem>
             <MenuItem value="activa">Activa</MenuItem>
@@ -183,20 +266,64 @@ export const HqpdsConfigurationsPage = () => {
         </FormControl>
       </Box>
 
-      <Box sx={{ height: 620, width: '100%' }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+        <Chip
+          icon={<StarIcon sx={{ color: filterStarred ? '#fff !important' : 'action.disabled' }} fontSize="small" />}
+          label="Destacados"
+          onClick={() => setFilterStarred(!filterStarred)}
+          sx={{
+            px: 0.5,
+            fontWeight: 500,
+            bgcolor: filterStarred ? '#1e1e1e' : '#f3f2eb',
+            color: filterStarred ? '#fff' : 'text.primary',
+            borderColor: filterStarred ? '#1e1e1e' : 'divider',
+            '&:hover': {
+              bgcolor: filterStarred ? '#333' : '#e8e7e0',
+            },
+          }}
+          variant={filterStarred ? 'filled' : 'outlined'}
+        />
+
+        <Chip
+          icon={<AccessTimeIcon sx={{ color: filterRecent ? '#fff !important' : 'action.disabled' }} fontSize="small" />}
+          label="Recientes"
+          onClick={() => setFilterRecent(!filterRecent)}
+          sx={{
+            px: 0.5,
+            fontWeight: 500,
+            bgcolor: filterRecent ? '#1e1e1e' : '#f3f2eb',
+            color: filterRecent ? '#fff' : 'text.primary',
+            borderColor: filterRecent ? '#1e1e1e' : 'divider',
+            '&:hover': {
+              bgcolor: filterRecent ? '#333' : '#e8e7e0',
+            },
+          }}
+          variant={filterRecent ? 'filled' : 'outlined'}
+        />
+      </Box>
+
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
           <DataGrid
-            rows={filtered}
+            rows={filteredFinal}
             columns={columns}
             pageSizeOptions={[10, 25, 50]}
-            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 10 } },
+              columns: {
+                columnVisibilityModel: {
+                  configuration_mode: false,
+                  is_active: false,
+                },
+              },
+            }}
             disableSelectionOnClick
             onRowClick={(params) => navigate(`/configuraciones/editar/${params.row.id}`)}
-            sx={{ cursor: 'pointer' }}
+            sx={{ cursor: 'pointer', border: 'none' }}
           />
         )}
       </Box>

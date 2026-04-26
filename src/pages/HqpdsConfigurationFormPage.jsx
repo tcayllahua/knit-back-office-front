@@ -583,10 +583,10 @@ export const HqpdsConfigurationFormPage = () => {
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
         {!isEditMode
-          ? 'Nuevo Programa HQPDS'
+          ? 'Nuevo Programa'
           : isEditingMode
-            ? 'Editar Configuración HQPDS'
-            : 'Ver Configuración HQPDS'}
+            ? 'Editar Configuración'
+            : 'Ver Configuración'}
       </Typography>
 
       <Card sx={{ p: 3, maxWidth: 900 }}>

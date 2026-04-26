@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -25,6 +25,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetKnittingParameters } from '../hooks/queries'
 import { useDeleteKnittingParameterMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 const MODE_COLOR = {
   jacquard: 'primary',
@@ -33,6 +34,7 @@ const MODE_COLOR = {
 
 export const KnittingParametersPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [filterMode, setFilterMode] = useState('')
   const [filterCanvas, setFilterCanvas] = useState('')
@@ -41,6 +43,17 @@ export const KnittingParametersPage = () => {
 
   const { data: items = [], isLoading } = useGetKnittingParameters()
   const deleteMutation = useDeleteKnittingParameterMutation()
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/tejido/nueva')}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nuevo Téjido
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions, navigate])
 
   const filtered = items.filter((item) => {
     const matchesSearch =
@@ -116,12 +129,8 @@ export const KnittingParametersPage = () => {
   ]
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/tejido/nueva')}>
-          Nuevo Parámetro
-        </Button>
-
         <TextField
           placeholder="Buscar por punto o submodo"
           size="small"
@@ -160,9 +169,9 @@ export const KnittingParametersPage = () => {
         </FormControl>
       </Box>
 
-      <Box sx={{ height: 620, width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -172,6 +181,7 @@ export const KnittingParametersPage = () => {
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableSelectionOnClick
+            sx={{ border: 'none' }}
           />
         )}
       </Box>

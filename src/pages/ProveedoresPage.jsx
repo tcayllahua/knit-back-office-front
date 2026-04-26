@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { useGetProviders } from '../hooks/queries'
 import { useCreateProvidersBulkMutation, useDeleteProviderMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 const REQUIRED_FIELDS = ['razon_social', 'ruc', 'direccion', 'email', 'telefono', 'celular']
 
@@ -66,6 +67,7 @@ const normalizeRow = (row) => {
 
 export const ProveedoresPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
@@ -73,6 +75,17 @@ export const ProveedoresPage = () => {
   const { data: items = [], isLoading } = useGetProviders()
   const deleteMutation = useDeleteProviderMutation()
   const bulkCreateMutation = useCreateProvidersBulkMutation()
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/proveedores/nuevo')}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nuevo Proveedor
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions, navigate])
 
   const filtered = items.filter((item) => {
     const q = searchText.toLowerCase()
@@ -194,12 +207,8 @@ export const ProveedoresPage = () => {
   ]
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/proveedores/nuevo')}>
-          Nuevo Proveedor
-        </Button>
-
         <Button
           variant="outlined"
           component="label"
@@ -228,9 +237,9 @@ export const ProveedoresPage = () => {
         />
       </Box>
 
-      <Box sx={{ height: 620, width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -240,6 +249,7 @@ export const ProveedoresPage = () => {
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableSelectionOnClick
+            sx={{ border: 'none' }}
           />
         )}
       </Box>

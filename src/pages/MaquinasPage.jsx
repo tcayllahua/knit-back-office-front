@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -25,6 +25,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetMachines } from '../hooks/queries'
 import { useDeleteMachineMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 const getMaintenanceColor = (status) => {
   const normalized = (status || '').toLowerCase()
@@ -38,6 +39,7 @@ const getMaintenanceColor = (status) => {
 
 export const MaquinasPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterGauge, setFilterGauge] = useState('')
@@ -46,6 +48,17 @@ export const MaquinasPage = () => {
 
   const { data: machines = [], isLoading } = useGetMachines()
   const deleteMutation = useDeleteMachineMutation()
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/maquinas/nueva')}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nueva Máquina
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions, navigate])
 
   const filteredMachines = machines.filter((machine) => {
     const matchesSearch =
@@ -126,16 +139,8 @@ export const MaquinasPage = () => {
   ]
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/maquinas/nueva')}
-        >
-          Nuevo Parámetro
-        </Button>
-
         <TextField
           placeholder="Buscar por marca o modelo"
           size="small"
@@ -178,9 +183,9 @@ export const MaquinasPage = () => {
         </FormControl>
       </Box>
 
-      <Box sx={{ height: 600, width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -194,6 +199,7 @@ export const MaquinasPage = () => {
               },
             }}
             disableSelectionOnClick
+            sx={{ border: 'none' }}
           />
         )}
       </Box>

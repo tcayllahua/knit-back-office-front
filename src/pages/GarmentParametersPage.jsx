@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -25,6 +25,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetGarmentParameters } from '../hooks/queries'
 import { useDeleteGarmentParameterMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 const COMPLEXITY_COLOR = {
   simple: 'success',
@@ -34,6 +35,7 @@ const COMPLEXITY_COLOR = {
 
 export const GarmentParametersPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterSize, setFilterSize] = useState('')
@@ -42,6 +44,17 @@ export const GarmentParametersPage = () => {
 
   const { data: garments = [], isLoading } = useGetGarmentParameters()
   const deleteMutation = useDeleteGarmentParameterMutation()
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/prendas/nueva')}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nueva Prenda
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions, navigate])
 
   const filtered = garments.filter((g) => {
     const matchesSearch =
@@ -118,16 +131,8 @@ export const GarmentParametersPage = () => {
   ]
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/prendas/nueva')}
-        >
-          Nuevo Parámetro
-        </Button>
-
         <TextField
           placeholder="Buscar por tipo o modelo"
           size="small"
@@ -170,9 +175,9 @@ export const GarmentParametersPage = () => {
         </FormControl>
       </Box>
 
-      <Box sx={{ height: 600, width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -184,6 +189,7 @@ export const GarmentParametersPage = () => {
               pagination: { paginationModel: { pageSize: 10 } },
             }}
             disableSelectionOnClick
+            sx={{ border: 'none' }}
           />
         )}
       </Box>

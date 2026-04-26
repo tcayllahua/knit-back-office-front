@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -25,9 +25,11 @@ import {
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetMaterialParameters } from '../hooks/queries'
 import { useDeleteMaterialParameterMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 export const MaterialParametersPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterUnit, setFilterUnit] = useState('')
@@ -36,6 +38,17 @@ export const MaterialParametersPage = () => {
 
   const { data: items = [], isLoading } = useGetMaterialParameters()
   const deleteMutation = useDeleteMaterialParameterMutation()
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/materiales/nueva')}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nuevo Material
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions, navigate])
 
   const filtered = items.filter((item) => {
     const matchesSearch =
@@ -101,12 +114,8 @@ export const MaterialParametersPage = () => {
   ]
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/materiales/nueva')}>
-          Nuevo Parámetro
-        </Button>
-
         <TextField
           placeholder="Buscar por tipo, marca o color"
           size="small"
@@ -147,9 +156,9 @@ export const MaterialParametersPage = () => {
         </FormControl>
       </Box>
 
-      <Box sx={{ height: 620, width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -159,6 +168,7 @@ export const MaterialParametersPage = () => {
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableSelectionOnClick
+            sx={{ border: 'none' }}
           />
         )}
       </Box>

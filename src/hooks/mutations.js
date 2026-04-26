@@ -594,6 +594,7 @@ export const useCreateHqpdsConfigurationMutation = () => {
       ])
       queryClient.setQueryData(['hqpds-configuration', String(createdConfiguration.id)], createdConfiguration)
       queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations-recent'] })
       queryClient.invalidateQueries({ queryKey: ['hqpds-configuration', String(createdConfiguration.id)] })
       toast.success('Configuración HQPDS creada exitosamente')
     },
@@ -625,6 +626,7 @@ export const useUpdateHqpdsConfigurationMutation = () => {
       )
       queryClient.setQueryData(['hqpds-configuration', String(updatedConfiguration.id)], updatedConfiguration)
       queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations-recent'] })
       queryClient.invalidateQueries({ queryKey: ['hqpds-configuration', String(updatedConfiguration.id)] })
       toast.success('Configuración HQPDS actualizada exitosamente')
     },
@@ -650,6 +652,7 @@ export const useDeleteHqpdsConfigurationMutation = () => {
         current.filter((item) => item.id !== deletedId)
       )
       queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations-recent'] })
       toast.success('Configuración HQPDS eliminada exitosamente')
     },
     onError: (error) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { useGetThreads } from '../hooks/queries'
 import { useCreateThreadsBulkMutation, useDeleteThreadMutation } from '../hooks/mutations'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 
 const REQUIRED_FIELDS = ['codigo_hilo']
 
@@ -90,6 +91,7 @@ const normalizeRow = (row) => {
 
 export const HilosPage = () => {
   const navigate = useNavigate()
+  const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
@@ -269,12 +271,8 @@ export const HilosPage = () => {
   ]
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/hilos/nuevo')}>
-          Nuevo Hilo
-        </Button>
-
         <Button
           variant="outlined"
           component="label"
@@ -303,9 +301,9 @@ export const HilosPage = () => {
         />
       </Box>
 
-      <Box sx={{ height: 620, width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -315,6 +313,7 @@ export const HilosPage = () => {
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableSelectionOnClick
+            sx={{ border: 'none' }}
           />
         )}
       </Box>

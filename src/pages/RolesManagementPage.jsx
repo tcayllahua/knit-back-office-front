@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
   Box,
-  Typography,
   Button,
   TextField,
   InputAdornment,
@@ -33,6 +32,7 @@ import {
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { useGetRoles, useGetFormularios, useGetRole } from '../hooks/queries'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 import {
   useCreateRoleMutation,
   useUpdateRoleMutation,
@@ -41,6 +41,7 @@ import {
 } from '../hooks/mutations'
 
 export const RolesManagementPage = () => {
+  const { setActions, clearActions } = useHeaderActions()
   const [search, setSearch] = useState('')
   const [roleDialogOpen, setRoleDialogOpen] = useState(false)
   const [editingRole, setEditingRole] = useState(null)
@@ -73,6 +74,17 @@ export const RolesManagementPage = () => {
     reset({ nombre: '', descripcion: '' })
     setRoleDialogOpen(true)
   }
+
+  useEffect(() => {
+    setActions(
+      <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}
+        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+      >
+        Nuevo Rol
+      </Button>
+    )
+    return () => clearActions()
+  }, [setActions, clearActions])
 
   const handleOpenEdit = (role) => {
     setEditingRole(role)
@@ -225,16 +237,7 @@ export const RolesManagementPage = () => {
   ]
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          Gestión de Roles
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
-          Nuevo Rol
-        </Button>
-      </Box>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <TextField
         placeholder="Buscar rol..."
         size="small"
@@ -250,17 +253,19 @@ export const RolesManagementPage = () => {
         }}
       />
 
-      <DataGrid
-        rows={filteredRoles}
-        columns={columns}
-        loading={isLoading}
-        autoHeight
-        disableRowSelectionOnClick
-        pageSizeOptions={[10, 25]}
-        initialState={{
-          pagination: { paginationModel: { pageSize: 10 } },
-        }}
-      />
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <DataGrid
+          rows={filteredRoles}
+          columns={columns}
+          loading={isLoading}
+          disableRowSelectionOnClick
+          pageSizeOptions={[10, 25]}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+          }}
+          sx={{ border: 'none' }}
+        />
+      </Box>
 
       {/* Dialog: Create/Edit Role */}
       <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="sm" fullWidth>

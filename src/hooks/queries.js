@@ -247,6 +247,22 @@ export const useGetHqpdsConfigurations = () => {
   })
 }
 
+export const useGetRecentHqpdsConfigurations = (limit = 8) => {
+  return useQuery({
+    queryKey: ['hqpds-configurations-recent', limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hqpds_configurations')
+        .select('id, design_name, garment_type, image_file_design, last_modified_date, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(limit)
+      if (error) throw error
+      return data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export const useGetHqpdsConfiguration = (id) => {
   return useQuery({
     queryKey: ['hqpds-configuration', String(id)],

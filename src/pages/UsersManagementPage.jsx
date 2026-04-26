@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   Box,
-  Typography,
   TextField,
   InputAdornment,
   Chip,
@@ -91,13 +90,7 @@ export const UsersManagementPage = () => {
   ]
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          Gestión de Usuarios
-        </Typography>
-      </Box>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <TextField
         placeholder="Buscar por nombre o email..."
         size="small"
@@ -113,20 +106,22 @@ export const UsersManagementPage = () => {
         }}
       />
 
-      <DataGrid
-        rows={filteredUsers}
-        columns={columns}
-        loading={isLoading}
-        autoHeight
-        disableRowSelectionOnClick
-        pageSizeOptions={[10, 25, 50]}
-        initialState={{
-          pagination: { paginationModel: { pageSize: 10 } },
-        }}
-        sx={{
-          '& .MuiDataGrid-cell': { display: 'flex', alignItems: 'center' },
-        }}
-      />
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <DataGrid
+          rows={filteredUsers}
+          columns={columns}
+          loading={isLoading}
+          disableRowSelectionOnClick
+          pageSizeOptions={[10, 25, 50]}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+          }}
+          sx={{
+            border: 'none',
+            '& .MuiDataGrid-cell': { display: 'flex', alignItems: 'center' },
+          }}
+        />
+      </Box>
     </Box>
   )
 }
