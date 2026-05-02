@@ -1,18 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../config/supabase'
 
-export const useGetMachines = () => {
+export const useGetMachines = (filterByUserId = null) => {
   return useQuery({
-    queryKey: ['machines'],
+    queryKey: ['machines', filterByUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('machine_parameters')
-        .select('*')
+        .select(filterByUserId ? '*, hqpds_configurations!inner(id_auth)' : '*')
         .order('created_at', { ascending: false })
+      if (filterByUserId) {
+        query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -72,14 +76,18 @@ export const useGetMachineStats = () => {
   })
 }
 
-export const useGetGarmentParameters = () => {
+export const useGetGarmentParameters = (filterByUserId = null) => {
   return useQuery({
-    queryKey: ['garment-parameters'],
+    queryKey: ['garment-parameters', filterByUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('garment_parameters')
-        .select('*')
+        .select(filterByUserId ? '*, hqpds_configurations!inner(id_auth)' : '*')
         .order('garment_order', { ascending: true, nullsFirst: false })
+      if (filterByUserId) {
+        query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -104,14 +112,18 @@ export const useGetGarmentParameter = (id) => {
   })
 }
 
-export const useGetKnittingParameters = () => {
+export const useGetKnittingParameters = (filterByUserId = null) => {
   return useQuery({
-    queryKey: ['knitting-parameters'],
+    queryKey: ['knitting-parameters', filterByUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('knitting_parameters')
-        .select('*')
+        .select(filterByUserId ? '*, hqpds_configurations!inner(id_auth)' : '*')
         .order('parameter_order', { ascending: true, nullsFirst: false })
+      if (filterByUserId) {
+        query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -136,14 +148,18 @@ export const useGetKnittingParameter = (id) => {
   })
 }
 
-export const useGetMaterialParameters = () => {
+export const useGetMaterialParameters = (filterByUserId = null) => {
   return useQuery({
-    queryKey: ['material-parameters'],
+    queryKey: ['material-parameters', filterByUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('material_parameters')
-        .select('*')
+        .select(filterByUserId ? '*, hqpds_configurations!inner(id_auth)' : '*')
         .order('material_order', { ascending: true, nullsFirst: false })
+      if (filterByUserId) {
+        query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -232,14 +248,18 @@ export const useGetProvider = (id) => {
   })
 }
 
-export const useGetHqpdsConfigurations = () => {
+export const useGetHqpdsConfigurations = (filterByUserId = null) => {
   return useQuery({
-    queryKey: ['hqpds-configurations'],
+    queryKey: ['hqpds-configurations', filterByUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('hqpds_configurations')
         .select('*')
         .order('creation_date', { ascending: false })
+      if (filterByUserId) {
+        query = query.eq('id_auth', filterByUserId)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -247,15 +267,19 @@ export const useGetHqpdsConfigurations = () => {
   })
 }
 
-export const useGetRecentHqpdsConfigurations = (limit = 8) => {
+export const useGetRecentHqpdsConfigurations = (limit = 8, filterByUserId = null) => {
   return useQuery({
-    queryKey: ['hqpds-configurations-recent', limit],
+    queryKey: ['hqpds-configurations-recent', limit, filterByUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('hqpds_configurations')
         .select('id, design_name, garment_type, image_file_design, last_modified_date, updated_at')
         .order('updated_at', { ascending: false })
         .limit(limit)
+      if (filterByUserId) {
+        query = query.eq('id_auth', filterByUserId)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },

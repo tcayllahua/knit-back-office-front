@@ -85,7 +85,11 @@ export const UsersManagementPage = () => {
       field: 'fecha_registro',
       headerName: 'Fecha registro',
       width: 160,
-      valueFormatter: (value) => value ? new Date(value).toLocaleDateString('es') : '',
+      valueFormatter: (value) => {
+        if (!value) return ''
+        const [y, m, d] = value.slice(0, 10).split('-')
+        return `${d}/${m}/${y}`
+      },
     },
   ]
 

@@ -74,14 +74,16 @@ const COLOR_PALETTE = [
   '#5B0F00', '#660000', '#783F04', '#7F6000', '#274E13', '#0C343D', '#1C4587', '#073763', '#20124D', '#4C1130',
 ]
 
+const getNowLocal = () => new Date().toLocaleString('sv-SE', { timeZone: 'America/Lima' }).replace(' ', 'T').slice(0, 16)
+
 const DEFAULT_VALUES = {
   hqpds_id: '',
   design_name: '',
   garment_type: '',
   garment_size: '',
   description: '',
-  creation_date: new Date().toISOString().slice(0, 16),
-  last_modified_date: new Date().toISOString().slice(0, 16),
+  creation_date: '',
+  last_modified_date: '',
   version: 1,
   image_file_design: [],
   pds_file: [],
@@ -181,11 +183,11 @@ export const HqpdsConfigurationFormPage = () => {
         garment_size: configuration.garment_size ?? '',
         description: configuration.description ?? '',
         creation_date: configuration.creation_date
-          ? new Date(configuration.creation_date).toISOString().slice(0, 16)
-          : new Date().toISOString().slice(0, 16),
+          ? configuration.creation_date.slice(0, 16)
+          : getNowLocal(),
         last_modified_date: configuration.last_modified_date
-          ? new Date(configuration.last_modified_date).toISOString().slice(0, 16)
-          : new Date().toISOString().slice(0, 16),
+          ? configuration.last_modified_date.slice(0, 16)
+          : getNowLocal(),
         version: configuration.version ?? 1,
         image_file_design: Array.isArray(configuration.image_file_design) ? configuration.image_file_design : [],
         pds_file: Array.isArray(configuration.pds_file) ? configuration.pds_file : [],
@@ -488,11 +490,11 @@ export const HqpdsConfigurationFormPage = () => {
           garment_size: createdConfiguration.garment_size ?? '',
           description: createdConfiguration.description ?? '',
           creation_date: createdConfiguration.creation_date
-            ? new Date(createdConfiguration.creation_date).toISOString().slice(0, 16)
-            : new Date().toISOString().slice(0, 16),
+            ? createdConfiguration.creation_date.slice(0, 16)
+            : getNowLocal(),
           last_modified_date: createdConfiguration.last_modified_date
-            ? new Date(createdConfiguration.last_modified_date).toISOString().slice(0, 16)
-            : new Date().toISOString().slice(0, 16),
+            ? createdConfiguration.last_modified_date.slice(0, 16)
+            : getNowLocal(),
           version: createdConfiguration.version ?? 1,
           image_file_design: Array.isArray(createdConfiguration.image_file_design) ? createdConfiguration.image_file_design : [],
           pds_file: Array.isArray(createdConfiguration.pds_file) ? createdConfiguration.pds_file : [],
@@ -525,11 +527,11 @@ export const HqpdsConfigurationFormPage = () => {
           garment_size: updatedConfiguration.garment_size ?? '',
           description: updatedConfiguration.description ?? '',
           creation_date: updatedConfiguration.creation_date
-            ? new Date(updatedConfiguration.creation_date).toISOString().slice(0, 16)
-            : new Date().toISOString().slice(0, 16),
+            ? updatedConfiguration.creation_date.slice(0, 16)
+            : getNowLocal(),
           last_modified_date: updatedConfiguration.last_modified_date
-            ? new Date(updatedConfiguration.last_modified_date).toISOString().slice(0, 16)
-            : new Date().toISOString().slice(0, 16),
+            ? updatedConfiguration.last_modified_date.slice(0, 16)
+            : getNowLocal(),
           version: updatedConfiguration.version ?? 1,
           image_file_design: Array.isArray(updatedConfiguration.image_file_design) ? updatedConfiguration.image_file_design : [],
           pds_file: Array.isArray(updatedConfiguration.pds_file) ? updatedConfiguration.pds_file : [],
@@ -654,15 +656,13 @@ export const HqpdsConfigurationFormPage = () => {
             </Grid>
             <Grid item xs={12} sm={3}>
               <TextField
-                {...register('creation_date', { required: 'Fecha de creación requerida' })}
+                {...register('creation_date')}
                 fullWidth
                 type="datetime-local"
-                label="Fecha creación *"
+                label="Fecha creación"
                 disabled
                 InputProps={{ readOnly: true }}
                 InputLabelProps={{ shrink: true }}
-                error={!!errors.creation_date}
-                helperText={errors.creation_date?.message}
               />
             </Grid>
             <Grid item xs={12} sm={3}>

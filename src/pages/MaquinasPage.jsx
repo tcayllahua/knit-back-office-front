@@ -26,6 +26,7 @@ import { DataGrid } from '@mui/x-data-grid'
 import { useGetMachines } from '../hooks/queries'
 import { useDeleteMachineMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
+import { useAuthStore } from '../store/authStore'
 
 const getMaintenanceColor = (status) => {
   const normalized = (status || '').toLowerCase()
@@ -40,19 +41,22 @@ const getMaintenanceColor = (status) => {
 export const MaquinasPage = () => {
   const navigate = useNavigate()
   const { setActions, clearActions } = useHeaderActions()
+  const user = useAuthStore((state) => state.user)
+  const userRole = useAuthStore((state) => state.userRole)
+  const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterGauge, setFilterGauge] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedMachine, setSelectedMachine] = useState(null)
 
-  const { data: machines = [], isLoading } = useGetMachines()
+  const { data: machines = [], isLoading } = useGetMachines(filterByUserId)
   const deleteMutation = useDeleteMachineMutation()
 
   useEffect(() => {
     setActions(
       <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/maquinas/nueva')}
-        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+        sx={{ bgcolor: '#1e1e1e', '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
       >
         Nueva Máquina
       </Button>
@@ -104,7 +108,11 @@ export const MaquinasPage = () => {
       field: 'calibration_date',
       headerName: 'Calibración',
       width: 130,
-      valueFormatter: (value) => (value ? new Date(value).toLocaleDateString('es-ES') : '-'),
+      valueFormatter: (value) => {
+        if (!value) return '-'
+        const [y, m, d] = value.slice(0, 10).split('-')
+        return `${d}/${m}/${y}`
+      },
     },
     {
       field: 'is_primary',

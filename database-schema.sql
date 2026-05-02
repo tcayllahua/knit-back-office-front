@@ -303,6 +303,63 @@ BEFORE INSERT OR UPDATE ON public.proveedores
 FOR EACH ROW
 EXECUTE FUNCTION public.normalize_proveedores_fields();
 
+-- Trigger para actualizar updated_at automáticamente
+CREATE OR REPLACE FUNCTION public.update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_updated_at_hqpds_configurations ON public.hqpds_configurations;
+CREATE TRIGGER trg_updated_at_hqpds_configurations
+BEFORE UPDATE ON public.hqpds_configurations
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_machine_parameters ON public.machine_parameters;
+CREATE TRIGGER trg_updated_at_machine_parameters
+BEFORE UPDATE ON public.machine_parameters
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_garment_parameters ON public.garment_parameters;
+CREATE TRIGGER trg_updated_at_garment_parameters
+BEFORE UPDATE ON public.garment_parameters
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_knitting_parameters ON public.knitting_parameters;
+CREATE TRIGGER trg_updated_at_knitting_parameters
+BEFORE UPDATE ON public.knitting_parameters
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_material_parameters ON public.material_parameters;
+CREATE TRIGGER trg_updated_at_material_parameters
+BEFORE UPDATE ON public.material_parameters
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_hilos ON public.hilos;
+CREATE TRIGGER trg_updated_at_hilos
+BEFORE UPDATE ON public.hilos
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_proveedores ON public.proveedores;
+CREATE TRIGGER trg_updated_at_proveedores
+BEFORE UPDATE ON public.proveedores
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
+DROP TRIGGER IF EXISTS trg_updated_at_usuarios ON public.usuarios;
+CREATE TRIGGER trg_updated_at_usuarios
+BEFORE UPDATE ON public.usuarios
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at();
+
 -- Índices
 CREATE INDEX IF NOT EXISTS idx_usuarios_id_auth ON public.usuarios(id_auth);
 CREATE INDEX IF NOT EXISTS idx_hqpds_configurations_design_name ON public.hqpds_configurations(design_name);

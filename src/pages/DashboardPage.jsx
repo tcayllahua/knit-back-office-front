@@ -7,12 +7,16 @@ import {
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useGetRecentHqpdsConfigurations } from '../hooks/queries'
+import { useAuthStore } from '../store/authStore'
 
 const VISIBLE = 4
 const GAP = 16
 
 export const DashboardPage = () => {
-  const { data: recentConfigs, isLoading: isLoadingRecent } = useGetRecentHqpdsConfigurations()
+  const user = useAuthStore((state) => state.user)
+  const userRole = useAuthStore((state) => state.userRole)
+  const filterByUserId = userRole === 'usuario' ? user?.id : null
+  const { data: recentConfigs, isLoading: isLoadingRecent } = useGetRecentHqpdsConfigurations(8, filterByUserId)
   const navigate = useNavigate()
   const [offset, setOffset] = useState(0)
 

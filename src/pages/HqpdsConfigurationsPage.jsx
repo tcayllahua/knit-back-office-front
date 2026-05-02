@@ -34,10 +34,14 @@ import { DataGrid } from '@mui/x-data-grid'
 import { useGetHqpdsConfigurations } from '../hooks/queries'
 import { useDeleteHqpdsConfigurationMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
+import { useAuthStore } from '../store/authStore'
 
 export const HqpdsConfigurationsPage = () => {
   const navigate = useNavigate()
   const { setActions, clearActions } = useHeaderActions()
+  const user = useAuthStore((state) => state.user)
+  const userRole = useAuthStore((state) => state.userRole)
+  const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
   const [filterMode, setFilterMode] = useState('')
   const [filterActive, setFilterActive] = useState('')
@@ -52,13 +56,13 @@ export const HqpdsConfigurationsPage = () => {
   const [filterStarred, setFilterStarred] = useState(false)
   const [filterRecent, setFilterRecent] = useState(false)
 
-  const { data: items = [], isLoading } = useGetHqpdsConfigurations()
+  const { data: items = [], isLoading } = useGetHqpdsConfigurations(filterByUserId)
   const deleteMutation = useDeleteHqpdsConfigurationMutation()
 
   useEffect(() => {
     setActions(
       <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/configuraciones/nueva')}
-        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+        sx={{ bgcolor: '#1e1e1e', '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
       >
         Nuevo Programa
       </Button>
@@ -148,12 +152,17 @@ export const HqpdsConfigurationsPage = () => {
       ),
     },
     {
-      field: 'creation_date',
-      headerName: 'Fecha de creación',
-      width: 150,
+      field: 'updated_at',
+      headerName: 'Última modificación',
+      width: 170,
       align: 'center',
       headerAlign: 'center',
-      valueFormatter: (value) => (value ? new Date(value).toLocaleString('es-ES') : '-'),
+      valueFormatter: (value) => {
+        if (!value) return '-'
+        const [date, time] = value.slice(0, 16).split('T')
+        const [y, m, d] = date.split('-')
+        return `${d}/${m}/${y} ${time || ''}`
+      },
     },
     {
       field: 'acciones',
@@ -205,21 +214,11 @@ export const HqpdsConfigurationsPage = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
-          placeholder="Buscar por diseño o usuario"
+          placeholder="Buscar"
           size="small"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          sx={{
-            flex: 1,
-            minWidth: 280,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 6,
-              bgcolor: '#fff',
-              '& fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-              '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.3)' },
-              '&.Mui-focused fieldset': { borderColor: '#1e1e1e', borderWidth: 1.5 },
-            },
-          }}
+          sx={{ flex: 1, minWidth: 280 }}
         />
 
         <FormControl sx={{ minWidth: 150 }}>
@@ -229,13 +228,6 @@ export const HqpdsConfigurationsPage = () => {
             label="Modo"
             onChange={(e) => setFilterMode(e.target.value)}
             size="small"
-            sx={{
-              borderRadius: 6,
-              bgcolor: '#fff',
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.15)' },
-              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.3)' },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1e1e1e', borderWidth: 1.5 },
-            }}
           >
             <MenuItem value="">Todos</MenuItem>
             <MenuItem value="simulacion">Simulación</MenuItem>
@@ -251,13 +243,6 @@ export const HqpdsConfigurationsPage = () => {
             label="Estado"
             onChange={(e) => setFilterActive(e.target.value)}
             size="small"
-            sx={{
-              borderRadius: 6,
-              bgcolor: '#fff',
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.15)' },
-              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.3)' },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1e1e1e', borderWidth: 1.5 },
-            }}
           >
             <MenuItem value="">Todos</MenuItem>
             <MenuItem value="activa">Activa</MenuItem>

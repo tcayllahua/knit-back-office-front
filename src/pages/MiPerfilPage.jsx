@@ -218,11 +218,11 @@ export const MiPerfilPage = () => {
               <TextField
                 fullWidth
                 label="Miembro desde"
-                value={new Date(profile.fecha_registro).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                value={(() => {
+                  const [y, m, d] = profile.fecha_registro.slice(0, 10).split('-')
+                  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+                  return `${Number(d)} de ${months[Number(m) - 1]} de ${y}`
+                })()}
                 disabled
                 size="small"
                 margin="normal"

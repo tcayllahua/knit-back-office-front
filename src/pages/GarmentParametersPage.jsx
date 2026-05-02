@@ -26,6 +26,7 @@ import { DataGrid } from '@mui/x-data-grid'
 import { useGetGarmentParameters } from '../hooks/queries'
 import { useDeleteGarmentParameterMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
+import { useAuthStore } from '../store/authStore'
 
 const COMPLEXITY_COLOR = {
   simple: 'success',
@@ -36,19 +37,22 @@ const COMPLEXITY_COLOR = {
 export const GarmentParametersPage = () => {
   const navigate = useNavigate()
   const { setActions, clearActions } = useHeaderActions()
+  const user = useAuthStore((state) => state.user)
+  const userRole = useAuthStore((state) => state.userRole)
+  const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterSize, setFilterSize] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
-  const { data: garments = [], isLoading } = useGetGarmentParameters()
+  const { data: garments = [], isLoading } = useGetGarmentParameters(filterByUserId)
   const deleteMutation = useDeleteGarmentParameterMutation()
 
   useEffect(() => {
     setActions(
       <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/prendas/nueva')}
-        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+        sx={{ bgcolor: '#1e1e1e', '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
       >
         Nueva Prenda
       </Button>

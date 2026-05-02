@@ -554,34 +554,37 @@ export const useCreateProvidersBulkMutation = () => {
   })
 }
 
-const buildHqpdsConfigurationPayload = (data) => ({
-  hqpds_id: data.hqpds_id || null,
-  design_name: data.design_name,
-  description: data.description || null,
-  creation_date: data.creation_date || new Date().toISOString(),
-  last_modified_date: new Date().toISOString(),
-  image_file_design: Array.isArray(data.image_file_design) ? data.image_file_design : [],
-  pds_file: Array.isArray(data.pds_file) ? data.pds_file : [],
-  hcd_file: Array.isArray(data.hcd_file) ? data.hcd_file : [],
-  configuration_mode: data.configuration_mode || null,
-  estimated_knitting_time: data.estimated_knitting_time ? Number(data.estimated_knitting_time) : null,
-  thread_guide: Array.isArray(data.thread_guide) ? data.thread_guide : [],
-  stitch_density: Array.isArray(data.stitch_density) ? data.stitch_density : [],
-  garment_type: data.garment_type || null,
-  garment_size: data.garment_size || null,
-  id_auth: data.id_auth || null,
-  version: data.version ? Number(data.version) : 1,
-  is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
-})
+const getNowLima = () => new Date().toLocaleString('sv-SE', { timeZone: 'America/Lima' }).replace(' ', 'T')
+
+const buildHqpdsConfigurationPayload = (data) => {
+  return {
+    hqpds_id: data.hqpds_id || null,
+    design_name: data.design_name,
+    description: data.description || null,
+    image_file_design: Array.isArray(data.image_file_design) ? data.image_file_design : [],
+    pds_file: Array.isArray(data.pds_file) ? data.pds_file : [],
+    hcd_file: Array.isArray(data.hcd_file) ? data.hcd_file : [],
+    configuration_mode: data.configuration_mode || null,
+    estimated_knitting_time: data.estimated_knitting_time ? Number(data.estimated_knitting_time) : null,
+    thread_guide: Array.isArray(data.thread_guide) ? data.thread_guide : [],
+    stitch_density: Array.isArray(data.stitch_density) ? data.stitch_density : [],
+    garment_type: data.garment_type || null,
+    garment_size: data.garment_size || null,
+    id_auth: data.id_auth || null,
+    version: data.version ? Number(data.version) : 1,
+    is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+  }
+}
 
 export const useCreateHqpdsConfigurationMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (data) => {
+      const payload = buildHqpdsConfigurationPayload(data)
       const { data: createdConfiguration, error } = await supabase
         .from('hqpds_configurations')
-        .insert(buildHqpdsConfigurationPayload(data))
+        .insert(payload)
         .select('*')
         .single()
       if (error) throw error
@@ -609,11 +612,12 @@ export const useUpdateHqpdsConfigurationMutation = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }) => {
-      const { creation_date, ...rest } = buildHqpdsConfigurationPayload(data)
+      const payload = buildHqpdsConfigurationPayload(data)
+      const now = getNowLima()
 
       const { data: updatedConfiguration, error } = await supabase
         .from('hqpds_configurations')
-        .update(rest)
+        .update({ ...payload, last_modified_date: now, updated_at: now })
         .eq('id', Number(id))
         .select('*')
         .single()

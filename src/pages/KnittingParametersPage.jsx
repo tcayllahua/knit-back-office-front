@@ -26,6 +26,7 @@ import { DataGrid } from '@mui/x-data-grid'
 import { useGetKnittingParameters } from '../hooks/queries'
 import { useDeleteKnittingParameterMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
+import { useAuthStore } from '../store/authStore'
 
 const MODE_COLOR = {
   jacquard: 'primary',
@@ -35,19 +36,22 @@ const MODE_COLOR = {
 export const KnittingParametersPage = () => {
   const navigate = useNavigate()
   const { setActions, clearActions } = useHeaderActions()
+  const user = useAuthStore((state) => state.user)
+  const userRole = useAuthStore((state) => state.userRole)
+  const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
   const [filterMode, setFilterMode] = useState('')
   const [filterCanvas, setFilterCanvas] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
-  const { data: items = [], isLoading } = useGetKnittingParameters()
+  const { data: items = [], isLoading } = useGetKnittingParameters(filterByUserId)
   const deleteMutation = useDeleteKnittingParameterMutation()
 
   useEffect(() => {
     setActions(
       <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/tejido/nueva')}
-        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+        sx={{ bgcolor: '#1e1e1e', '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
       >
         Nuevo Téjido
       </Button>

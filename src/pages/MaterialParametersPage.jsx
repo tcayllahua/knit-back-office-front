@@ -26,23 +26,27 @@ import { DataGrid } from '@mui/x-data-grid'
 import { useGetMaterialParameters } from '../hooks/queries'
 import { useDeleteMaterialParameterMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
+import { useAuthStore } from '../store/authStore'
 
 export const MaterialParametersPage = () => {
   const navigate = useNavigate()
   const { setActions, clearActions } = useHeaderActions()
+  const user = useAuthStore((state) => state.user)
+  const userRole = useAuthStore((state) => state.userRole)
+  const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterUnit, setFilterUnit] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
-  const { data: items = [], isLoading } = useGetMaterialParameters()
+  const { data: items = [], isLoading } = useGetMaterialParameters(filterByUserId)
   const deleteMutation = useDeleteMaterialParameterMutation()
 
   useEffect(() => {
     setActions(
       <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/materiales/nueva')}
-        sx={{ bgcolor: '#1e1e1e', borderRadius: 6, '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
+        sx={{ bgcolor: '#1e1e1e', '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
       >
         Nuevo Material
       </Button>
