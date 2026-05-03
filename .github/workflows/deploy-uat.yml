@@ -1,14 +1,12 @@
-name: Firebase Hosting Preview (PR)
-on: pull_request
-permissions:
-  checks: write
-  contents: read
-  pull-requests: write
+name: Deploy to UAT (Firebase)
+on:
+  push:
+    branches:
+      - uat
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
-  build_and_preview:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,15 +20,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (UAT env for PRs)
+      - name: Build (UAT)
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Deploy preview to Firebase (UAT)
+      - name: Deploy to Firebase (UAT)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KNIT_CE6E7 }}
+          channelId: live
           projectId: knit-ce6e7
