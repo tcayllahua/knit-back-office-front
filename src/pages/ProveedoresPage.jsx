@@ -11,6 +11,11 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  Typography,
+  Tooltip,
+  Popover,
+  FormControlLabel,
+  Switch,
 } from '@mui/material'
 import {
   Edit as EditIcon,
@@ -18,12 +23,14 @@ import {
   Add as AddIcon,
   UploadFile as UploadFileIcon,
   Download as DownloadIcon,
+  Settings as SettingsIcon,
+  RestoreFromTrash as RestoreIcon,
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { useGetProviders } from '../hooks/queries'
-import { useCreateProvidersBulkMutation, useDeleteProviderMutation } from '../hooks/mutations'
+import { useCreateProvidersBulkMutation, useDeleteProviderMutation, useRestoreProviderMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 
 const REQUIRED_FIELDS = ['razon_social', 'ruc', 'direccion', 'email', 'telefono', 'celular']
@@ -69,12 +76,15 @@ export const ProveedoresPage = () => {
   const navigate = useNavigate()
   const { setActions, clearActions } = useHeaderActions()
   const [searchText, setSearchText] = useState('')
+  const [optionsAnchor, setOptionsAnchor] = useState(null)
+  const [showDeleted, setShowDeleted] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
-  const { data: items = [], isLoading } = useGetProviders()
+  const { data: items = [], isLoading } = useGetProviders(showDeleted)
   const deleteMutation = useDeleteProviderMutation()
   const bulkCreateMutation = useCreateProvidersBulkMutation()
+  const restoreMutation = useRestoreProviderMutation()
 
   useEffect(() => {
     setActions(
@@ -105,6 +115,10 @@ export const ProveedoresPage = () => {
     await deleteMutation.mutateAsync(selectedItem.id)
     setDeleteDialogOpen(false)
     setSelectedItem(null)
+  }
+
+  const handleRestore = async (row) => {
+    await restoreMutation.mutateAsync(row.id)
   }
 
   const handleMassiveUpload = async (event) => {
@@ -187,20 +201,30 @@ export const ProveedoresPage = () => {
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => navigate(`/proveedores/editar/${params.row.id}`)}
-            title="Editar"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleDeleteClick(params.row)}
-            title="Eliminar"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          {params.row.deleted_at ? (
+            <Tooltip title="Restaurar">
+              <IconButton size="small" onClick={() => handleRestore(params.row)} color="primary">
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <>
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/proveedores/editar/${params.row.id}`)}
+                title="Editar"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteClick(params.row)}
+                title="Eliminar"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
         </Box>
       ),
     },
@@ -208,6 +232,27 @@ export const ProveedoresPage = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Typography variant="h6" fontWeight={600}>Todos los proveedores</Typography>
+        <Tooltip title="Más opciones">
+          <IconButton size="small" sx={{ ml: 1 }} onClick={(e) => setOptionsAnchor(e.currentTarget)}>
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Popover
+          open={Boolean(optionsAnchor)}
+          anchorEl={optionsAnchor}
+          onClose={() => setOptionsAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Box sx={{ p: 2 }}>
+            <FormControlLabel
+              control={<Switch checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} size="small" />}
+              label="Mostrar eliminados"
+            />
+          </Box>
+        </Popover>
+      </Box>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <Button
           variant="outlined"
@@ -249,7 +294,8 @@ export const ProveedoresPage = () => {
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableSelectionOnClick
-            sx={{ border: 'none' }}
+            getRowClassName={(params) => params.row.deleted_at ? 'deleted-row' : ''}
+            sx={{ border: 'none', '& .deleted-row': { opacity: 0.45, bgcolor: 'action.hover' } }}
           />
         )}
       </Box>

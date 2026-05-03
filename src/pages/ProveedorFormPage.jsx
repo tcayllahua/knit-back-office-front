@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 import {
   Box,
   Card,
@@ -29,6 +30,7 @@ const DEFAULT_VALUES = {
 export const ProveedorFormPage = () => {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { setActions, clearActions } = useHeaderActions()
   const isEditMode = !!id
 
   const { data: provider, isLoading: isProviderLoading } = useGetProvider(id)
@@ -78,12 +80,14 @@ export const ProveedorFormPage = () => {
 
   const isLoading = isSubmitting || createMutation.isPending || updateMutation.isPending
 
+  useEffect(() => {
+    const title = isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'
+    setActions(<Typography variant="h5" fontWeight={700}>{title}</Typography>)
+    return () => clearActions()
+  }, [isEditMode])
+
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        {isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-      </Typography>
-
       <Card sx={{ p: 3, maxWidth: 820 }}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>

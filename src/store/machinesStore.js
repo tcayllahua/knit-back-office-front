@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../config/supabase'
+import logger from '../utils/logger'
 
 const buildMachinePayload = (machineData) => ({
   machine_type: machineData.machine_type,
@@ -25,6 +26,7 @@ export const useMachinesStore = create((set) => ({
 
   fetchMachine: async (id) => {
     try {
+      logger.info('Machines', `Obteniendo máquina id: ${id}`)
       const { data, error } = await supabase
         .from('machine_parameters')
         .select('*')
@@ -32,16 +34,18 @@ export const useMachinesStore = create((set) => ({
         .single()
 
       if (error) throw error
+      logger.debug('Machines', `Máquina obtenida: ${data.machine_brand} ${data.machine_model}`)
       set({ currentMachine: data })
       return data
     } catch (err) {
-      console.error('Error fetching machine:', err)
+      logger.error('Machines', `Error al obtener máquina id: ${id}`, err)
       throw err
     }
   },
 
   createMachine: async (machineData) => {
     try {
+      logger.info('Machines', 'Creando nueva máquina', { type: machineData.machine_type, brand: machineData.machine_brand })
       const payload = buildMachinePayload(machineData)
       const { data: machine, error: insertError } = await supabase
         .from('machine_parameters')
@@ -51,16 +55,18 @@ export const useMachinesStore = create((set) => ({
 
       if (insertError) throw insertError
 
+      logger.info('Machines', `Máquina creada exitosamente id: ${machine.id}`)
       set({ currentMachine: machine })
       return machine
     } catch (err) {
-      console.error('Error creating machine:', err)
+      logger.error('Machines', 'Error al crear máquina', err)
       throw err
     }
   },
 
   updateMachine: async (id, machineData) => {
     try {
+      logger.info('Machines', `Actualizando máquina id: ${id}`)
       const payload = buildMachinePayload(machineData)
       const { error: updateError } = await supabase
         .from('machine_parameters')
@@ -69,23 +75,48 @@ export const useMachinesStore = create((set) => ({
 
       if (updateError) throw updateError
 
+      logger.info('Machines', `Máquina id: ${id} actualizada exitosamente`)
       return true
     } catch (err) {
-      console.error('Error updating machine:', err)
+      logger.error('Machines', `Error al actualizar máquina id: ${id}`, err)
       throw err
     }
   },
 
   deleteMachine: async (id) => {
     try {
-      const { error } = await supabase.from('machine_parameters').delete().eq('id', id)
+      logger.info('Machines', `Eliminando (soft-delete) máquina id: ${id}`)
+      const now = new Date().toLocaleString('en-US', { timeZone: 'America/Lima' })
+      const limaDate = new Date(now).toISOString()
+      const { error } = await supabase
+        .from('machine_parameters')
+        .update({ deleted_at: limaDate })
+        .eq('id', id)
 
       if (error) throw error
 
+      logger.info('Machines', `Máquina id: ${id} eliminada exitosamente`)
       set({ currentMachine: null })
       return true
     } catch (err) {
-      console.error('Error deleting machine:', err)
+      logger.error('Machines', `Error al eliminar máquina id: ${id}`, err)
+      throw err
+    }
+  },
+
+  restoreMachine: async (id) => {
+    try {
+      logger.info('Machines', `Restaurando máquina id: ${id}`)
+      const { error } = await supabase
+        .from('machine_parameters')
+        .update({ deleted_at: null })
+        .eq('id', id)
+
+      if (error) throw error
+      logger.info('Machines', `Máquina id: ${id} restaurada exitosamente`)
+      return true
+    } catch (err) {
+      logger.error('Machines', `Error al restaurar máquina id: ${id}`, err)
       throw err
     }
   },

@@ -16,15 +16,22 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  Typography,
+  Tooltip,
+  Popover,
+  FormControlLabel,
+  Switch,
 } from '@mui/material'
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  Settings as SettingsIcon,
+  RestoreFromTrash as RestoreIcon,
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetMaterialParameters } from '../hooks/queries'
-import { useDeleteMaterialParameterMutation } from '../hooks/mutations'
+import { useDeleteMaterialParameterMutation, useRestoreMaterialParameterMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 import { useAuthStore } from '../store/authStore'
 
@@ -35,13 +42,16 @@ export const MaterialParametersPage = () => {
   const userRole = useAuthStore((state) => state.userRole)
   const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
+  const [optionsAnchor, setOptionsAnchor] = useState(null)
+  const [showDeleted, setShowDeleted] = useState(false)
   const [filterType, setFilterType] = useState('')
   const [filterUnit, setFilterUnit] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
-  const { data: items = [], isLoading } = useGetMaterialParameters(filterByUserId)
+  const { data: items = [], isLoading } = useGetMaterialParameters(filterByUserId, showDeleted)
   const deleteMutation = useDeleteMaterialParameterMutation()
+  const restoreMutation = useRestoreMaterialParameterMutation()
 
   useEffect(() => {
     setActions(
@@ -75,6 +85,10 @@ export const MaterialParametersPage = () => {
     setSelectedItem(null)
   }
 
+  const handleRestore = async (row) => {
+    await restoreMutation.mutateAsync(row.id)
+  }
+
   const columns = [
     { field: 'material_order', headerName: 'Orden', width: 80 },
     { field: 'yarn_type', headerName: 'Tipo de hilo', flex: 1, minWidth: 140 },
@@ -98,20 +112,30 @@ export const MaterialParametersPage = () => {
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => navigate(`/materiales/editar/${params.row.id}`)}
-            title="Editar"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleDeleteClick(params.row)}
-            title="Eliminar"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          {params.row.deleted_at ? (
+            <Tooltip title="Restaurar">
+              <IconButton size="small" onClick={() => handleRestore(params.row)} color="primary">
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <>
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/materiales/editar/${params.row.id}`)}
+                title="Editar"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteClick(params.row)}
+                title="Eliminar"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
         </Box>
       ),
     },
@@ -119,6 +143,27 @@ export const MaterialParametersPage = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Typography variant="h6" fontWeight={600}>Todos los parámetros de material</Typography>
+        <Tooltip title="Más opciones">
+          <IconButton size="small" sx={{ ml: 1 }} onClick={(e) => setOptionsAnchor(e.currentTarget)}>
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Popover
+          open={Boolean(optionsAnchor)}
+          anchorEl={optionsAnchor}
+          onClose={() => setOptionsAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Box sx={{ p: 2 }}>
+            <FormControlLabel
+              control={<Switch checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} size="small" />}
+              label="Mostrar eliminados"
+            />
+          </Box>
+        </Popover>
+      </Box>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <TextField
           placeholder="Buscar por tipo, marca o color"
@@ -172,7 +217,8 @@ export const MaterialParametersPage = () => {
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableSelectionOnClick
-            sx={{ border: 'none' }}
+            getRowClassName={(params) => params.row.deleted_at ? 'deleted-row' : ''}
+            sx={{ border: 'none', '& .deleted-row': { opacity: 0.45, bgcolor: 'action.hover' } }}
           />
         )}
       </Box>

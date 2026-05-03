@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { useMachinesStore } from '../store/machinesStore'
 import { supabase } from '../config/supabase'
 import imageCompression from 'browser-image-compression'
+import logger from '../utils/logger'
 
 export const useCreateMachineMutation = () => {
   const queryClient = useQueryClient()
@@ -10,6 +11,7 @@ export const useCreateMachineMutation = () => {
 
   return useMutation({
     mutationFn: async ({ machineData }) => {
+      logger.info('Mutations', 'Creando máquina', { type: machineData.machine_type })
       return createMachine(machineData)
     },
     onSuccess: () => {
@@ -18,6 +20,7 @@ export const useCreateMachineMutation = () => {
       toast.success('Máquina creada exitosamente')
     },
     onError: (error) => {
+      logger.error('Mutations', 'Error al crear máquina', error)
       toast.error(error.message || 'Error al crear el parámetro de máquina')
     },
   })
@@ -61,11 +64,31 @@ export const useDeleteMachineMutation = () => {
   })
 }
 
+export const useRestoreMachineMutation = () => {
+  const queryClient = useQueryClient()
+  const restoreMachine = useMachinesStore((state) => state.restoreMachine)
+
+  return useMutation({
+    mutationFn: async ({ id }) => {
+      return restoreMachine(id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['machines'] })
+      queryClient.invalidateQueries({ queryKey: ['machine-stats'] })
+      toast.success('Máquina restaurada exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar la máquina')
+    },
+  })
+}
+
 export const useUpdateUserProfileMutation = (userId) => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async ({ profileData, profileImage }) => {
+      logger.info('Mutations', 'Actualizando perfil de usuario')
       // Update profile data
       const { error: updateError } = await supabase
         .from('usuarios')
@@ -105,7 +128,7 @@ export const useUpdateUserProfileMutation = (userId) => {
 
           if (urlUpdateError) throw urlUpdateError
         } catch (imageError) {
-          console.error('Error al procesar imagen:', imageError)
+          logger.error('Mutations', 'Error al procesar imagen de perfil', imageError)
           throw new Error('Error al subir la foto de perfil')
         }
       }
@@ -193,7 +216,7 @@ export const useDeleteGarmentParameterMutation = () => {
     mutationFn: async (id) => {
       const { error } = await supabase
         .from('garment_parameters')
-        .delete()
+        .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
     },
@@ -203,6 +226,27 @@ export const useDeleteGarmentParameterMutation = () => {
     },
     onError: (error) => {
       toast.error(error.message || 'Error al eliminar el parámetro de prenda')
+    },
+  })
+}
+
+export const useRestoreGarmentParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('garment_parameters')
+        .update({ deleted_at: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['garment-parameters'] })
+      toast.success('Parámetro de prenda restaurado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar el parámetro de prenda')
     },
   })
 }
@@ -269,7 +313,7 @@ export const useDeleteKnittingParameterMutation = () => {
     mutationFn: async (id) => {
       const { error } = await supabase
         .from('knitting_parameters')
-        .delete()
+        .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
     },
@@ -279,6 +323,27 @@ export const useDeleteKnittingParameterMutation = () => {
     },
     onError: (error) => {
       toast.error(error.message || 'Error al eliminar el parámetro de tejido')
+    },
+  })
+}
+
+export const useRestoreKnittingParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('knitting_parameters')
+        .update({ deleted_at: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['knitting-parameters'] })
+      toast.success('Parámetro de tejido restaurado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar el parámetro de tejido')
     },
   })
 }
@@ -350,7 +415,7 @@ export const useDeleteMaterialParameterMutation = () => {
     mutationFn: async (id) => {
       const { error } = await supabase
         .from('material_parameters')
-        .delete()
+        .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
     },
@@ -360,6 +425,27 @@ export const useDeleteMaterialParameterMutation = () => {
     },
     onError: (error) => {
       toast.error(error.message || 'Error al eliminar el parámetro de material')
+    },
+  })
+}
+
+export const useRestoreMaterialParameterMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('material_parameters')
+        .update({ deleted_at: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-parameters'] })
+      toast.success('Parámetro de material restaurado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar el parámetro de material')
     },
   })
 }
@@ -425,7 +511,7 @@ export const useDeleteThreadMutation = () => {
     mutationFn: async (id) => {
       const { error } = await supabase
         .from('hilos')
-        .delete()
+        .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
     },
@@ -439,11 +525,33 @@ export const useDeleteThreadMutation = () => {
   })
 }
 
+export const useRestoreThreadMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('hilos')
+        .update({ deleted_at: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] })
+      toast.success('Hilo restaurado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar el hilo')
+    },
+  })
+}
+
 export const useCreateThreadsBulkMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (rows) => {
+      logger.info('Mutations', `Carga masiva de hilos: ${rows.length} registros`)
       const payload = rows.map(buildThreadPayload)
       const { error } = await supabase
         .from('hilos')
@@ -453,9 +561,11 @@ export const useCreateThreadsBulkMutation = () => {
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['threads'] })
+      logger.info('Mutations', `Carga masiva completada: ${count} hilos`)
       toast.success(`Carga masiva completada: ${count} hilos registrados`)
     },
     onError: (error) => {
+      logger.error('Mutations', 'Error en carga masiva de hilos', error)
       toast.error(error.message || 'Error en la carga masiva de hilos')
     },
   })
@@ -518,7 +628,7 @@ export const useDeleteProviderMutation = () => {
     mutationFn: async (id) => {
       const { error } = await supabase
         .from('proveedores')
-        .delete()
+        .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
     },
@@ -532,11 +642,33 @@ export const useDeleteProviderMutation = () => {
   })
 }
 
+export const useRestoreProviderMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('proveedores')
+        .update({ deleted_at: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] })
+      toast.success('Proveedor restaurado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar el proveedor')
+    },
+  })
+}
+
 export const useCreateProvidersBulkMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (rows) => {
+      logger.info('Mutations', `Carga masiva de proveedores: ${rows.length} registros`)
       const payload = rows.map(buildProviderPayload)
       const { error } = await supabase
         .from('proveedores')
@@ -546,9 +678,11 @@ export const useCreateProvidersBulkMutation = () => {
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['providers'] })
+      logger.info('Mutations', `Carga masiva completada: ${count} proveedores`)
       toast.success(`Carga masiva completada: ${count} proveedores registrados`)
     },
     onError: (error) => {
+      logger.error('Mutations', 'Error en carga masiva de proveedores', error)
       toast.error(error.message || 'Error en la carga masiva de proveedores')
     },
   })
@@ -581,6 +715,7 @@ export const useCreateHqpdsConfigurationMutation = () => {
 
   return useMutation({
     mutationFn: async (data) => {
+      logger.info('Mutations', 'Creando programa HQPDS', { design: data.design_name })
       const payload = buildHqpdsConfigurationPayload(data)
       const { data: createdConfiguration, error } = await supabase
         .from('hqpds_configurations')
@@ -588,6 +723,7 @@ export const useCreateHqpdsConfigurationMutation = () => {
         .select('*')
         .single()
       if (error) throw error
+      logger.info('Mutations', `Programa HQPDS creado id: ${createdConfiguration.id}`)
       return createdConfiguration
     },
     onSuccess: (createdConfiguration) => {
@@ -602,6 +738,7 @@ export const useCreateHqpdsConfigurationMutation = () => {
       toast.success('Configuración HQPDS creada exitosamente')
     },
     onError: (error) => {
+      logger.error('Mutations', 'Error al crear programa HQPDS', error)
       toast.error(error.message || 'Error al crear la configuración HQPDS')
     },
   })
@@ -612,6 +749,7 @@ export const useUpdateHqpdsConfigurationMutation = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }) => {
+      logger.info('Mutations', `Actualizando programa HQPDS id: ${id}`)
       const payload = buildHqpdsConfigurationPayload(data)
       const now = getNowLima()
 
@@ -635,6 +773,7 @@ export const useUpdateHqpdsConfigurationMutation = () => {
       toast.success('Configuración HQPDS actualizada exitosamente')
     },
     onError: (error) => {
+      logger.error('Mutations', 'Error al actualizar programa HQPDS', error)
       toast.error(error.message || 'Error al actualizar la configuración HQPDS')
     },
   })
@@ -647,20 +786,39 @@ export const useDeleteHqpdsConfigurationMutation = () => {
     mutationFn: async (id) => {
       const { error } = await supabase
         .from('hqpds_configurations')
-        .delete()
+        .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
     },
     onSuccess: (_, deletedId) => {
-      queryClient.setQueryData(['hqpds-configurations'], (current = []) =>
-        current.filter((item) => item.id !== deletedId)
-      )
       queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
       queryClient.invalidateQueries({ queryKey: ['hqpds-configurations-recent'] })
-      toast.success('Configuración HQPDS eliminada exitosamente')
+      toast.success('Programa eliminado exitosamente')
     },
     onError: (error) => {
-      toast.error(error.message || 'Error al eliminar la configuración HQPDS')
+      toast.error(error.message || 'Error al eliminar el programa')
+    },
+  })
+}
+
+export const useRestoreHqpdsConfigurationMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('hqpds_configurations')
+        .update({ deleted_at: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations'] })
+      queryClient.invalidateQueries({ queryKey: ['hqpds-configurations-recent'] })
+      toast.success('Programa restaurado exitosamente')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al restaurar el programa')
     },
   })
 }
@@ -745,6 +903,7 @@ export const useUpdateRolePermissionsMutation = () => {
 
   return useMutation({
     mutationFn: async ({ rolId, permisos }) => {
+      logger.info('Mutations', `Actualizando permisos del rol id: ${rolId} (${permisos.length} formularios)`)
       // Delete existing permissions for this role
       const { error: deleteError } = await supabase
         .from('rol_formulario')

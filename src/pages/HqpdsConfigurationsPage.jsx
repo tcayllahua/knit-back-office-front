@@ -18,6 +18,10 @@ import {
   ImageList,
   ImageListItem,
   ImageListItemBar,
+  Tooltip,
+  Popover,
+  FormControlLabel,
+  Switch,
 } from '@mui/material'
 import {
   Edit as EditIcon,
@@ -29,10 +33,12 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   AccessTime as AccessTimeIcon,
+  Settings as SettingsIcon,
+  RestoreFromTrash as RestoreIcon,
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetHqpdsConfigurations } from '../hooks/queries'
-import { useDeleteHqpdsConfigurationMutation } from '../hooks/mutations'
+import { useDeleteHqpdsConfigurationMutation, useRestoreHqpdsConfigurationMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 import { useAuthStore } from '../store/authStore'
 
@@ -43,7 +49,9 @@ export const HqpdsConfigurationsPage = () => {
   const userRole = useAuthStore((state) => state.userRole)
   const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
-  const [filterMode, setFilterMode] = useState('')
+  const [optionsAnchor, setOptionsAnchor] = useState(null)
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [filterGarmentType, setFilterGarmentType] = useState('')
   const [filterActive, setFilterActive] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
@@ -56,8 +64,9 @@ export const HqpdsConfigurationsPage = () => {
   const [filterStarred, setFilterStarred] = useState(false)
   const [filterRecent, setFilterRecent] = useState(false)
 
-  const { data: items = [], isLoading } = useGetHqpdsConfigurations(filterByUserId)
+  const { data: items = [], isLoading } = useGetHqpdsConfigurations(filterByUserId, showDeleted)
   const deleteMutation = useDeleteHqpdsConfigurationMutation()
+  const restoreMutation = useRestoreHqpdsConfigurationMutation()
 
   useEffect(() => {
     setActions(
@@ -74,12 +83,12 @@ export const HqpdsConfigurationsPage = () => {
     const matchesSearch =
       item.design_name?.toLowerCase().includes(searchText.toLowerCase()) ||
       item.created_by_user?.toLowerCase().includes(searchText.toLowerCase())
-    const matchesMode = !filterMode || item.configuration_mode === filterMode
+    const matchesGarmentType = !filterGarmentType || item.garment_type === filterGarmentType
     const matchesActive =
       !filterActive ||
       (filterActive === 'activa' ? Boolean(item.is_active) : !Boolean(item.is_active))
 
-    return matchesSearch && matchesMode && matchesActive
+    return matchesSearch && matchesGarmentType && matchesActive
   })
 
   const filteredAfterStarred = filterStarred ? filtered.filter((item) => starred.includes(item.id)) : filtered
@@ -104,6 +113,10 @@ export const HqpdsConfigurationsPage = () => {
     await deleteMutation.mutateAsync(selectedItem.id)
     setDeleteDialogOpen(false)
     setSelectedItem(null)
+  }
+
+  const handleRestore = async (row) => {
+    await restoreMutation.mutateAsync(row.id)
   }
 
   const columns = [
@@ -182,28 +195,42 @@ export const HqpdsConfigurationsPage = () => {
             gap: 1,
           }}
         >
-          <IconButton
-            size="small"
-            onClick={(e) => { e.stopPropagation(); navigate(`/configuraciones/editar/${params.row.id}`) }}
-            title="Editar"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={(e) => { e.stopPropagation(); handleDeleteClick(params.row) }}
-            title="Eliminar"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-          {Array.isArray(params.row.image_file_design) && params.row.image_file_design.length > 0 && (
-            <IconButton
-              size="small"
-              onClick={(e) => { e.stopPropagation(); setPreviewImages(params.row.image_file_design) }}
-              title="Ver imágenes"
-            >
-              <ImageIcon fontSize="small" />
-            </IconButton>
+          {params.row.deleted_at ? (
+            <Tooltip title="Restaurar">
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); handleRestore(params.row) }}
+                color="primary"
+              >
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <>
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); navigate(`/configuraciones/editar/${params.row.id}`) }}
+                title="Editar"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={(e) => { e.stopPropagation(); handleDeleteClick(params.row) }}
+                title="Eliminar"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+              {Array.isArray(params.row.image_file_design) && params.row.image_file_design.length > 0 && (
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); setPreviewImages(params.row.image_file_design) }}
+                  title="Ver imágenes"
+                >
+                  <ImageIcon fontSize="small" />
+                </IconButton>
+              )}
+            </>
           )}
         </Box>
       ),
@@ -212,6 +239,27 @@ export const HqpdsConfigurationsPage = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Typography variant="h6" fontWeight={600}>Todos los programas</Typography>
+        <Tooltip title="Más opciones">
+          <IconButton size="small" sx={{ ml: 1 }} onClick={(e) => setOptionsAnchor(e.currentTarget)}>
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Popover
+          open={Boolean(optionsAnchor)}
+          anchorEl={optionsAnchor}
+          onClose={() => setOptionsAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Box sx={{ p: 2 }}>
+            <FormControlLabel
+              control={<Switch checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} size="small" />}
+              label="Mostrar eliminados"
+            />
+          </Box>
+        </Popover>
+      </Box>
       <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
           placeholder="Buscar"
@@ -222,17 +270,22 @@ export const HqpdsConfigurationsPage = () => {
         />
 
         <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel size="small">Modo</InputLabel>
+          <InputLabel size="small">Tipo de prenda</InputLabel>
           <Select
-            value={filterMode}
-            label="Modo"
-            onChange={(e) => setFilterMode(e.target.value)}
+            value={filterGarmentType}
+            label="Tipo de prenda"
+            onChange={(e) => setFilterGarmentType(e.target.value)}
             size="small"
           >
             <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="simulacion">Simulación</MenuItem>
-            <MenuItem value="produccion">Producción</MenuItem>
-            <MenuItem value="prueba">Prueba</MenuItem>
+            <MenuItem value="Libre - LIB">Libre</MenuItem>
+            <MenuItem value="Todo - TOD">Todo</MenuItem>
+            <MenuItem value="Manga - MAN">Manga</MenuItem>
+            <MenuItem value="Pecho - PEC">Pecho</MenuItem>
+            <MenuItem value="Espalda - ESP">Espalda</MenuItem>
+            <MenuItem value="Cuello - CUE">Cuello</MenuItem>
+            <MenuItem value="Bolsillo - BOL">Bolsillo</MenuItem>
+            <MenuItem value="Chalina - CHA">Chalina</MenuItem>
           </Select>
         </FormControl>
 
@@ -307,8 +360,9 @@ export const HqpdsConfigurationsPage = () => {
               },
             }}
             disableSelectionOnClick
-            onRowClick={(params) => navigate(`/configuraciones/editar/${params.row.id}`)}
-            sx={{ cursor: 'pointer', border: 'none' }}
+            onRowClick={(params) => !params.row.deleted_at && navigate(`/configuraciones/editar/${params.row.id}`)}
+            getRowClassName={(params) => params.row.deleted_at ? 'deleted-row' : ''}
+            sx={{ cursor: 'pointer', border: 'none', '& .deleted-row': { opacity: 0.45, bgcolor: 'action.hover' } }}
           />
         )}
       </Box>
@@ -382,7 +436,7 @@ export const HqpdsConfigurationsPage = () => {
             <WarningIcon sx={{ fontSize: 36, color: 'error.main' }} />
           </Box>
           <Typography variant="h6" fontWeight={600} gutterBottom>
-            ¿Eliminar configuración?
+            ¿Eliminar programa?
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Estás a punto de eliminar <strong>{selectedItem?.design_name}</strong>.

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 import {
   Box,
   Card,
@@ -54,6 +55,7 @@ const DEFAULT_VALUES = {
 export const GarmentParameterFormPage = () => {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { setActions, clearActions } = useHeaderActions()
   const isEditMode = !!id
 
   const { data: garment, isLoading: isGarmentLoading } = useGetGarmentParameter(id)
@@ -116,6 +118,12 @@ export const GarmentParameterFormPage = () => {
 
   const isLoading = isSubmitting || createMutation.isPending || updateMutation.isPending
 
+  useEffect(() => {
+    const title = isEditMode ? 'Editar Parámetro de Prenda' : 'Nuevo Parámetro de Prenda'
+    setActions(<Typography variant="h5" fontWeight={700}>{title}</Typography>)
+    return () => clearActions()
+  }, [isEditMode])
+
   const sectionTitle = (text) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
       {text}
@@ -124,10 +132,6 @@ export const GarmentParameterFormPage = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        {isEditMode ? 'Editar Parámetro de Prenda' : 'Nuevo Parámetro de Prenda'}
-      </Typography>
-
       <Card sx={{ p: 3, maxWidth: 800 }}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
 

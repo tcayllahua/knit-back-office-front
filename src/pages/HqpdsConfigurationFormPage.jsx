@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 import {
   Box,
   Card,
@@ -99,6 +100,7 @@ const DEFAULT_VALUES = {
 export const HqpdsConfigurationFormPage = () => {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { setActions, clearActions } = useHeaderActions()
   const isEditMode = !!id
   const [isEditingMode, setIsEditingMode] = useState(false)
   const [showNoChangesModal, setShowNoChangesModal] = useState(false)
@@ -201,6 +203,16 @@ export const HqpdsConfigurationFormPage = () => {
       })
     }
   }, [configuration, reset, user])
+
+  useEffect(() => {
+    const title = !isEditMode
+      ? 'Nuevo Programa'
+      : isEditingMode
+        ? 'Editar Programa'
+        : 'Ver Programa'
+    setActions(<Typography variant="h5" fontWeight={700}>{title}</Typography>)
+    return () => clearActions()
+  }, [isEditMode, isEditingMode])
 
   useEffect(() => {
     if (!isEditMode && user?.id) {
@@ -583,17 +595,11 @@ export const HqpdsConfigurationFormPage = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        {!isEditMode
-          ? 'Nuevo Programa'
-          : isEditingMode
-            ? 'Editar Configuración'
-            : 'Ver Configuración'}
-      </Typography>
-
       <Card sx={{ p: 3, maxWidth: 900 }}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          {sectionTitle('Información general')}
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+            Información general
+          </Typography>
           <Divider sx={{ mb: 2 }} />
 
           <Grid container spacing={2}>
@@ -1267,13 +1273,13 @@ export const HqpdsConfigurationFormPage = () => {
             </Button>
           )}
 
-          {sectionTitle('Control de configuración')}
+          {sectionTitle('Control de programa')}
           <Divider sx={{ mb: 2 }} />
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <FormControl fullWidth disabled={isFieldDisabled('configuration_mode')}>
-                <InputLabel>Modo de configuración</InputLabel>
-                <Select {...register('configuration_mode')} label="Modo de configuración" defaultValue="">
+                <InputLabel>Modo de programa</InputLabel>
+                <Select {...register('configuration_mode')} label="Modo de programa" defaultValue="">
                   <MenuItem value="">— Ninguno —</MenuItem>
                   {CONFIG_MODES.map((mode) => (
                     <MenuItem key={mode} value={mode}>
@@ -1301,7 +1307,7 @@ export const HqpdsConfigurationFormPage = () => {
                 render={({ field }) => (
                   <FormControlLabel
                     control={<Switch {...field} checked={Boolean(field.value)} disabled={isFieldDisabled('is_active')} />}
-                    label="Configuración activa"
+                    label="Programa activo"
                   />
                 )}
               />
@@ -1324,7 +1330,7 @@ export const HqpdsConfigurationFormPage = () => {
                       ? 'Guardar nueva versión'
                       : isEditMode
                         ? 'Guardar cambios'
-                        : 'Crear configuración'}
+                        : 'Crear programa'}
                 </Button>
                 <Button
                   type="button"

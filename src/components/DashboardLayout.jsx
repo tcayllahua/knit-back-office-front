@@ -280,7 +280,7 @@ const DashboardLayoutInner = () => {
                   variant="overline"
                   sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', color: 'text.disabled', fontSize: 10 }}
                 >
-                  CONFIGURACIONES
+                  PROGRAMAS
                 </Typography>
                 <List sx={{ display: 'grid', gap: 0.5 }}>
                   {settingsSubItems.map((item) => renderNavItem(item, (path) => navigate(path)))}
@@ -399,7 +399,7 @@ const DashboardLayoutInner = () => {
                       <Inventory2Icon />
                     </Box>
                   </ListItemIcon>
-                  <ListItemText primary="Configuraciones" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
+                  <ListItemText primary="Programas" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
                   {settingsMenuOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                 </ListItemButton>
               </ListItem>
@@ -722,8 +722,10 @@ const DashboardLayoutInner = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, md: 3.5 },
-          mt: 8,
+          px: { xs: 2, md: 3.5 },
+          pt: { xs: 1, md: 1.5 },
+          pb: { xs: 2, md: 3.5 },
+          mt: 7,
           width: { xs: '100%', md: showDrawer ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%' },
           bgcolor: darkMode ? 'background.default' : '#fff',
           transition: 'width 0.2s ease-in-out',

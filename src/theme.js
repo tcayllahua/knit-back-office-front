@@ -1,4 +1,6 @@
 import { createTheme } from '@mui/material/styles'
+import { esES as dataGridEsES } from '@mui/x-data-grid/locales'
+import { esES as coreEsES } from '@mui/material/locale'
 
 const lightTheme = createTheme({
   palette: {
@@ -17,7 +19,40 @@ const lightTheme = createTheme({
   typography: {
     fontFamily: "'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif",
   },
-})
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiFilledInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiDataGrid: {
+      styleOverrides: {
+        columnHeaderTitle: {
+          fontWeight: 700,
+        },
+      },
+    },
+  },
+}, dataGridEsES, coreEsES)
 
 const darkTheme = createTheme({
   palette: {
@@ -36,6 +71,39 @@ const darkTheme = createTheme({
   typography: {
     fontFamily: "'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif",
   },
-})
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiFilledInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiDataGrid: {
+      styleOverrides: {
+        columnHeaderTitle: {
+          fontWeight: 700,
+        },
+      },
+    },
+  },
+}, dataGridEsES, coreEsES)
 
 export { lightTheme, darkTheme }

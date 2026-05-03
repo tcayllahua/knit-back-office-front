@@ -1,9 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../config/supabase'
+import logger from '../utils/logger'
 
-export const useGetMachines = (filterByUserId = null) => {
+const handleQueryError = (queryName, error) => {
+  logger.error('Queries', `Error en ${queryName}: ${error.message}`, error)
+  throw error
+}
+
+export const useGetMachines = (filterByUserId = null, showDeleted = false) => {
   return useQuery({
-    queryKey: ['machines', filterByUserId],
+    queryKey: ['machines', filterByUserId, showDeleted],
     queryFn: async () => {
       let query = supabase
         .from('machine_parameters')
@@ -11,6 +17,9 @@ export const useGetMachines = (filterByUserId = null) => {
         .order('created_at', { ascending: false })
       if (filterByUserId) {
         query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
       }
       const { data, error } = await query
       if (error) throw error
@@ -76,9 +85,9 @@ export const useGetMachineStats = () => {
   })
 }
 
-export const useGetGarmentParameters = (filterByUserId = null) => {
+export const useGetGarmentParameters = (filterByUserId = null, showDeleted = false) => {
   return useQuery({
-    queryKey: ['garment-parameters', filterByUserId],
+    queryKey: ['garment-parameters', filterByUserId, showDeleted],
     queryFn: async () => {
       let query = supabase
         .from('garment_parameters')
@@ -86,6 +95,9 @@ export const useGetGarmentParameters = (filterByUserId = null) => {
         .order('garment_order', { ascending: true, nullsFirst: false })
       if (filterByUserId) {
         query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
       }
       const { data, error } = await query
       if (error) throw error
@@ -112,9 +124,9 @@ export const useGetGarmentParameter = (id) => {
   })
 }
 
-export const useGetKnittingParameters = (filterByUserId = null) => {
+export const useGetKnittingParameters = (filterByUserId = null, showDeleted = false) => {
   return useQuery({
-    queryKey: ['knitting-parameters', filterByUserId],
+    queryKey: ['knitting-parameters', filterByUserId, showDeleted],
     queryFn: async () => {
       let query = supabase
         .from('knitting_parameters')
@@ -122,6 +134,9 @@ export const useGetKnittingParameters = (filterByUserId = null) => {
         .order('parameter_order', { ascending: true, nullsFirst: false })
       if (filterByUserId) {
         query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
       }
       const { data, error } = await query
       if (error) throw error
@@ -148,9 +163,9 @@ export const useGetKnittingParameter = (id) => {
   })
 }
 
-export const useGetMaterialParameters = (filterByUserId = null) => {
+export const useGetMaterialParameters = (filterByUserId = null, showDeleted = false) => {
   return useQuery({
-    queryKey: ['material-parameters', filterByUserId],
+    queryKey: ['material-parameters', filterByUserId, showDeleted],
     queryFn: async () => {
       let query = supabase
         .from('material_parameters')
@@ -158,6 +173,9 @@ export const useGetMaterialParameters = (filterByUserId = null) => {
         .order('material_order', { ascending: true, nullsFirst: false })
       if (filterByUserId) {
         query = query.eq('hqpds_configurations.id_auth', filterByUserId)
+      }
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
       }
       const { data, error } = await query
       if (error) throw error
@@ -184,14 +202,18 @@ export const useGetMaterialParameter = (id) => {
   })
 }
 
-export const useGetThreads = () => {
+export const useGetThreads = (showDeleted = false) => {
   return useQuery({
-    queryKey: ['threads'],
+    queryKey: ['threads', showDeleted],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('hilos')
         .select('*')
         .order('nombre_hilo', { ascending: true })
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -216,14 +238,18 @@ export const useGetThread = (id) => {
   })
 }
 
-export const useGetProviders = () => {
+export const useGetProviders = (showDeleted = false) => {
   return useQuery({
-    queryKey: ['providers'],
+    queryKey: ['providers', showDeleted],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('proveedores')
         .select('*')
         .order('razon_social', { ascending: true })
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -248,9 +274,9 @@ export const useGetProvider = (id) => {
   })
 }
 
-export const useGetHqpdsConfigurations = (filterByUserId = null) => {
+export const useGetHqpdsConfigurations = (filterByUserId = null, showDeleted = false) => {
   return useQuery({
-    queryKey: ['hqpds-configurations', filterByUserId],
+    queryKey: ['hqpds-configurations', filterByUserId, showDeleted],
     queryFn: async () => {
       let query = supabase
         .from('hqpds_configurations')
@@ -258,6 +284,9 @@ export const useGetHqpdsConfigurations = (filterByUserId = null) => {
         .order('creation_date', { ascending: false })
       if (filterByUserId) {
         query = query.eq('id_auth', filterByUserId)
+      }
+      if (!showDeleted) {
+        query = query.is('deleted_at', null)
       }
       const { data, error } = await query
       if (error) throw error
@@ -274,6 +303,7 @@ export const useGetRecentHqpdsConfigurations = (limit = 8, filterByUserId = null
       let query = supabase
         .from('hqpds_configurations')
         .select('id, design_name, garment_type, image_file_design, last_modified_date, updated_at')
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false })
         .limit(limit)
       if (filterByUserId) {

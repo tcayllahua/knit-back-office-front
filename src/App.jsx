@@ -9,6 +9,7 @@ import { lightTheme, darkTheme } from './theme'
 import { router } from './router'
 import { useAuthStore } from './store/authStore'
 import { useThemeStore } from './store/themeStore'
+import logger from './utils/logger'
 
 // Create QueryClient outside of component
 const queryClient = new QueryClient({
@@ -16,6 +17,16 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 10,
+      retry: (failureCount, error) => {
+        // No reintentar en errores de autenticación/autorización
+        if (error?.status === 401 || error?.status === 403) return false
+        return failureCount < 2
+      },
+    },
+    mutations: {
+      onError: (error) => {
+        logger.error('QueryClient', 'Error en mutación', error)
+      },
     },
   },
 })

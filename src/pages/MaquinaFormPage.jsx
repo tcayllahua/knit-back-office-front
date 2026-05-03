@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useHeaderActions } from '../components/HeaderActionsContext'
 import {
   Box,
   Card,
@@ -45,6 +46,7 @@ const DEFAULT_VALUES = {
 export const MaquinaFormPage = () => {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { setActions, clearActions } = useHeaderActions()
   const isEditMode = !!id
 
   const { data: machine, isLoading: isMachineLoading } = useGetMachine(id)
@@ -102,6 +104,12 @@ export const MaquinaFormPage = () => {
   }
 
   const isLoading = isSubmitting || createMutation.isPending || updateMutation.isPending
+  useEffect(() => {
+    const title = isEditMode ? 'Editar Parámetro de Máquina' : 'Nuevo Parámetro de Máquina'
+    setActions(<Typography variant="h5" fontWeight={700}>{title}</Typography>)
+    return () => clearActions()
+  }, [isEditMode])
+
   const sectionTitle = (text) => (
     <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
       {text}
@@ -110,10 +118,6 @@ export const MaquinaFormPage = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        {isEditMode ? 'Editar Parámetro de Máquina' : 'Nuevo Parámetro de Máquina'}
-      </Typography>
-
       <Card sx={{ p: 3, maxWidth: 800 }}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           {sectionTitle('Datos base')}

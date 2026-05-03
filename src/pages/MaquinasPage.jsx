@@ -16,15 +16,22 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  Typography,
+  Tooltip,
+  Popover,
+  FormControlLabel,
+  Switch,
 } from '@mui/material'
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  Settings as SettingsIcon,
+  RestoreFromTrash as RestoreIcon,
 } from '@mui/icons-material'
 import { DataGrid } from '@mui/x-data-grid'
 import { useGetMachines } from '../hooks/queries'
-import { useDeleteMachineMutation } from '../hooks/mutations'
+import { useDeleteMachineMutation, useRestoreMachineMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 import { useAuthStore } from '../store/authStore'
 
@@ -45,13 +52,16 @@ export const MaquinasPage = () => {
   const userRole = useAuthStore((state) => state.userRole)
   const filterByUserId = userRole === 'usuario' ? user?.id : null
   const [searchText, setSearchText] = useState('')
+  const [optionsAnchor, setOptionsAnchor] = useState(null)
+  const [showDeleted, setShowDeleted] = useState(false)
   const [filterType, setFilterType] = useState('')
   const [filterGauge, setFilterGauge] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedMachine, setSelectedMachine] = useState(null)
 
-  const { data: machines = [], isLoading } = useGetMachines(filterByUserId)
+  const { data: machines = [], isLoading } = useGetMachines(filterByUserId, showDeleted)
   const deleteMutation = useDeleteMachineMutation()
+  const restoreMutation = useRestoreMachineMutation()
 
   useEffect(() => {
     setActions(
@@ -83,6 +93,10 @@ export const MaquinasPage = () => {
     await deleteMutation.mutateAsync({ id: selectedMachine.id })
     setDeleteDialogOpen(false)
     setSelectedMachine(null)
+  }
+
+  const handleRestore = async (row) => {
+    await restoreMutation.mutateAsync({ id: row.id })
   }
 
   const columns = [
@@ -127,20 +141,30 @@ export const MaquinasPage = () => {
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => navigate(`/maquinas/editar/${params.row.id}`)}
-            title="Editar"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleDeleteClick(params.row)}
-            title="Eliminar"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          {params.row.deleted_at ? (
+            <Tooltip title="Restaurar">
+              <IconButton size="small" onClick={() => handleRestore(params.row)} color="primary">
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <>
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/maquinas/editar/${params.row.id}`)}
+                title="Editar"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteClick(params.row)}
+                title="Eliminar"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
         </Box>
       ),
     },
@@ -148,6 +172,27 @@ export const MaquinasPage = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Typography variant="h6" fontWeight={600}>Todos los parámetros de máquina</Typography>
+        <Tooltip title="Más opciones">
+          <IconButton size="small" sx={{ ml: 1 }} onClick={(e) => setOptionsAnchor(e.currentTarget)}>
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Popover
+          open={Boolean(optionsAnchor)}
+          anchorEl={optionsAnchor}
+          onClose={() => setOptionsAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Box sx={{ p: 2 }}>
+            <FormControlLabel
+              control={<Switch checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} size="small" />}
+              label="Mostrar eliminados"
+            />
+          </Box>
+        </Popover>
+      </Box>
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <TextField
           placeholder="Buscar por marca o modelo"
@@ -207,7 +252,8 @@ export const MaquinasPage = () => {
               },
             }}
             disableSelectionOnClick
-            sx={{ border: 'none' }}
+            getRowClassName={(params) => params.row.deleted_at ? 'deleted-row' : ''}
+            sx={{ border: 'none', '& .deleted-row': { opacity: 0.45, bgcolor: 'action.hover' } }}
           />
         )}
       </Box>

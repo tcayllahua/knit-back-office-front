@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../config/supabase'
+import logger from '../utils/logger'
 
 export const useAuthStore = create(
   persist(
@@ -18,14 +19,21 @@ export const useAuthStore = create(
 
       fetchUserRole: async (userId) => {
         try {
+          logger.debug('Auth', `Obteniendo rol para userId: ${userId}`)
           const { data, error } = await supabase
             .from('usuarios')
             .select('roles(nombre)')
             .eq('id_auth', userId)
             .single()
-          if (error) return null
-          return data?.roles?.nombre || null
-        } catch {
+          if (error) {
+            logger.warn('Auth', 'No se pudo obtener rol de usuario', error)
+            return null
+          }
+          const role = data?.roles?.nombre || null
+          logger.info('Auth', `Rol obtenido: ${role}`)
+          return role
+        } catch (err) {
+          logger.error('Auth', 'Error inesperado al obtener rol', err)
           return null
         }
       },
@@ -33,6 +41,7 @@ export const useAuthStore = create(
       initializeAuth: async () => {
         try {
           set({ loading: true })
+          logger.info('Auth', 'Inicializando autenticación...')
           const {
             data: { session },
             error,
@@ -41,6 +50,7 @@ export const useAuthStore = create(
           if (error) throw error
 
           if (session?.user) {
+            logger.info('Auth', `Sesión activa encontrada para: ${session.user.email}`)
             const { data: userData } = await supabase
               .from('usuarios')
               .select('roles(nombre)')
@@ -48,10 +58,13 @@ export const useAuthStore = create(
               .single()
             const roleName = userData?.roles?.nombre || null
             set({ user: session.user, authenticated: true, userRole: roleName })
+            logger.info('Auth', `Usuario autenticado con rol: ${roleName}`)
           } else {
+            logger.info('Auth', 'No hay sesión activa')
             set({ user: null, authenticated: false, userRole: null })
           }
         } catch (err) {
+          logger.error('Auth', 'Error al inicializar autenticación', err)
           set({ error: err.message, user: null, authenticated: false, userRole: null })
         } finally {
           set({ loading: false })
@@ -61,6 +74,7 @@ export const useAuthStore = create(
       login: async (email, password) => {
         try {
           set({ loading: true, error: null })
+          logger.info('Auth', `Intento de login: ${email}`)
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -76,9 +90,11 @@ export const useAuthStore = create(
           const roleName = userData?.roles?.nombre || null
 
           set({ user: data.user, authenticated: true, userRole: roleName })
+          logger.info('Auth', `Login exitoso: ${email} (rol: ${roleName})`)
           return data.user
         } catch (err) {
           const message = err.message || 'Error al iniciar sesión'
+          logger.error('Auth', `Login fallido para ${email}`, err)
           set({ error: message })
           throw err
         } finally {
@@ -89,6 +105,7 @@ export const useAuthStore = create(
       loginWithGoogle: async () => {
         try {
           set({ loading: true, error: null })
+          logger.info('Auth', 'Intento de login con Google')
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -98,9 +115,11 @@ export const useAuthStore = create(
 
           if (error) throw error
 
+          logger.info('Auth', 'Redireccionando a Google OAuth')
           return data
         } catch (err) {
           const message = err.message || 'Error al iniciar sesión con Google'
+          logger.error('Auth', 'Login con Google fallido', err)
           set({ error: message })
           throw err
         } finally {
@@ -151,6 +170,7 @@ export const useAuthStore = create(
       register: async (email, password, userData) => {
         try {
           set({ loading: true, error: null })
+          logger.info('Auth', `Registro de nuevo usuario: ${email}`)
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -176,9 +196,11 @@ export const useAuthStore = create(
 
           if (insertError) throw insertError
 
+          logger.info('Auth', `Registro exitoso: ${email}`)
           return data.user
         } catch (err) {
           const message = err.message || 'Error al registrarse'
+          logger.error('Auth', `Registro fallido para ${email}`, err)
           set({ error: message })
           throw err
         } finally {
@@ -189,12 +211,15 @@ export const useAuthStore = create(
       logout: async () => {
         try {
           set({ loading: true, error: null })
+          logger.info('Auth', 'Cerrando sesión...')
           const { error } = await supabase.auth.signOut()
 
           if (error) throw error
 
           set({ user: null, authenticated: false, userRole: null })
+          logger.info('Auth', 'Sesión cerrada exitosamente')
         } catch (err) {
+          logger.error('Auth', 'Error al cerrar sesión', err)
           set({ error: err.message })
           throw err
         } finally {
