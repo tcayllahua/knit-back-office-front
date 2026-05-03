@@ -1323,6 +1323,7 @@ export const HqpdsConfigurationFormPage = () => {
                   type="submit"
                   disabled={isSaveDisabled}
                   startIcon={isLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+                  sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
                 >
                   {isLoading
                     ? 'Guardando...'
@@ -1337,6 +1338,7 @@ export const HqpdsConfigurationFormPage = () => {
                   variant="outlined"
                   disabled={isLoading}
                   startIcon={<CancelIcon />}
+                  sx={{ color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -1358,6 +1360,7 @@ export const HqpdsConfigurationFormPage = () => {
                   type="button"
                   variant="contained"
                   startIcon={<EditIcon />}
+                  sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -1369,8 +1372,8 @@ export const HqpdsConfigurationFormPage = () => {
                 <Button
                   type="button"
                   variant="contained"
-                  color="secondary"
                   startIcon={<AddCircleOutline />}
+                  sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -1383,6 +1386,7 @@ export const HqpdsConfigurationFormPage = () => {
                   type="button"
                   variant="outlined"
                   startIcon={<CancelIcon />}
+                  sx={{ color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -1475,12 +1479,13 @@ export const HqpdsConfigurationFormPage = () => {
           </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSubGarmentDialog({ open: false, type: '', files: null, uploadType: '' })}>
+          <Button onClick={() => setSubGarmentDialog({ open: false, type: '', files: null, uploadType: '' })} sx={{ color: 'common.black' }}>
             Cancelar
           </Button>
           <Button
             variant="contained"
             disabled={!subGarmentDialog.type}
+            sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
             onClick={() => {
               const garmentCode = subGarmentDialog.type.split(' - ')[0].charAt(0).toUpperCase()
               if (subGarmentDialog.uploadType === 'pds') {

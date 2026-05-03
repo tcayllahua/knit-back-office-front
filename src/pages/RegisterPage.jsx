@@ -229,7 +229,7 @@ export const RegisterPage = () => {
           <Button
             fullWidth
             variant="contained"
-            sx={{ mt: 3, mb: 2 }}
+            sx={{ mt: 3, mb: 2, bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
             type="submit"
             disabled={isSubmitting}
           >
@@ -243,7 +243,7 @@ export const RegisterPage = () => {
             type="button"
             variant="outlined"
             startIcon={<Google />}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}
             onClick={handleGoogleRegister}
             disabled={isSubmitting}
           >

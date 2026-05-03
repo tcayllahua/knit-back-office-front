@@ -275,10 +275,11 @@ export const MaterialParameterFormPage = () => {
               type="submit"
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={20} /> : undefined}
+              sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
             >
               {isLoading ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear parámetro'}
             </Button>
-            <Button variant="outlined" onClick={() => navigate('/materiales')}>
+            <Button variant="outlined" onClick={() => navigate('/materiales')} sx={{ color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}>
               Cancelar
             </Button>
           </Box>

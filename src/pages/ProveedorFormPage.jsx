@@ -181,10 +181,11 @@ export const ProveedorFormPage = () => {
               type="submit"
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={20} /> : undefined}
+              sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
             >
               {isLoading ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear proveedor'}
             </Button>
-            <Button variant="outlined" onClick={() => navigate('/proveedores')}>
+            <Button variant="outlined" onClick={() => navigate('/proveedores')} sx={{ color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}>
               Cancelar
             </Button>
           </Box>

@@ -265,10 +265,11 @@ export const HiloFormPage = () => {
               type="submit"
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={20} /> : undefined}
+              sx={{ bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
             >
               {isLoading ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear hilo'}
             </Button>
-            <Button variant="outlined" onClick={() => navigate('/hilos')}>
+            <Button variant="outlined" onClick={() => navigate('/hilos')} sx={{ color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}>
               Cancelar
             </Button>
           </Box>

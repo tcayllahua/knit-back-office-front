@@ -242,7 +242,7 @@ export const LoginPage = () => {
                 <Button
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2, py: 1.2 }}
+                  sx={{ mt: 3, mb: 2, py: 1.2, bgcolor: 'common.black', '&:hover': { bgcolor: '#333' } }}
                   type="submit"
                   disabled={isSubmitting}
                 >
@@ -256,7 +256,7 @@ export const LoginPage = () => {
                   type="button"
                   variant="outlined"
                   startIcon={<Google />}
-                  sx={{ py: 1.2 }}
+                  sx={{ py: 1.2, color: 'common.black', borderColor: 'common.black', '&:hover': { borderColor: '#333', color: '#333' } }}
                   onClick={handleGoogleLogin}
                   disabled={isSubmitting}
                 >
@@ -289,10 +289,10 @@ export const LoginPage = () => {
                   />
                 </DialogContent>
                 <DialogActions>
-                  <Button type="button" onClick={() => setResetDialogOpen(false)}>
+                  <Button type="button" onClick={() => setResetDialogOpen(false)} sx={{ color: 'common.black' }}>
                     Cancelar
                   </Button>
-                  <Button type="button" onClick={handleSendResetEmail} disabled={resetSubmitting}>
+                  <Button type="button" onClick={handleSendResetEmail} disabled={resetSubmitting} sx={{ color: 'common.black' }}>
                     {resetSubmitting ? 'Enviando...' : 'Enviar enlace'}
                   </Button>
                 </DialogActions>
