@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { useGetRoles, useGetFormularios, useGetRole } from '../hooks/queries'
+import { useGetRoles, useGetForms, useGetRole } from '../hooks/queries'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 import {
   useCreateRoleMutation,
@@ -50,7 +50,7 @@ export const RolesManagementPage = () => {
   const [permissionsState, setPermissionsState] = useState({})
 
   const { data: roles = [], isLoading } = useGetRoles()
-  const { data: formularios = [] } = useGetFormularios()
+  const { data: forms = [] } = useGetForms()
   const { data: roleDetail, isFetching: isRoleDetailFetching } = useGetRole(selectedRoleId)
 
   const createRole = useCreateRoleMutation()
@@ -66,12 +66,12 @@ export const RolesManagementPage = () => {
   } = useForm()
 
   const filteredRoles = roles.filter((r) =>
-    (r.nombre || '').toLowerCase().includes(search.toLowerCase())
+    (r.name || '').toLowerCase().includes(search.toLowerCase())
   )
 
   const handleOpenCreate = () => {
     setEditingRole(null)
-    reset({ nombre: '', descripcion: '' })
+    reset({ name: '', description: '' })
     setRoleDialogOpen(true)
   }
 
@@ -88,7 +88,7 @@ export const RolesManagementPage = () => {
 
   const handleOpenEdit = (role) => {
     setEditingRole(role)
-    reset({ nombre: role.nombre, descripcion: role.descripcion || '' })
+    reset({ name: role.name, description: role.description || '' })
     setRoleDialogOpen(true)
   }
 
@@ -100,15 +100,15 @@ export const RolesManagementPage = () => {
 
   // Sync permissions state when roleDetail loads/changes
   useEffect(() => {
-    if (!roleDetail?.rol_formulario || !permissionsDialogOpen) return
+    if (!roleDetail?.role_form || !permissionsDialogOpen) return
     const state = {}
-    roleDetail.rol_formulario.forEach((rf) => {
-      const fId = rf.formularios?.id || rf.formulario_id
+    roleDetail.role_form.forEach((rf) => {
+      const fId = rf.forms?.id || rf.form_id
       state[fId] = {
-        puede_ver: rf.puede_ver,
-        puede_crear: rf.puede_crear,
-        puede_editar: rf.puede_editar,
-        puede_eliminar: rf.puede_eliminar,
+        can_view: rf.can_view,
+        can_create: rf.can_create,
+        can_edit: rf.can_edit,
+        can_delete: rf.can_delete,
       }
     })
     setPermissionsState(state)
@@ -136,15 +136,15 @@ export const RolesManagementPage = () => {
     }
   }
 
-  const handlePermissionChange = (formularioId, field, checked) => {
+  const handlePermissionChange = (formId, field, checked) => {
     setPermissionsState((prev) => ({
       ...prev,
-      [formularioId]: {
-        ...prev[formularioId],
-        puede_ver: prev[formularioId]?.puede_ver || false,
-        puede_crear: prev[formularioId]?.puede_crear || false,
-        puede_editar: prev[formularioId]?.puede_editar || false,
-        puede_eliminar: prev[formularioId]?.puede_eliminar || false,
+      [formId]: {
+        ...prev[formId],
+        can_view: prev[formId]?.can_view || false,
+        can_create: prev[formId]?.can_create || false,
+        can_edit: prev[formId]?.can_edit || false,
+        can_delete: prev[formId]?.can_delete || false,
         [field]: checked,
       },
     }))
@@ -152,13 +152,13 @@ export const RolesManagementPage = () => {
 
   const handleSavePermissions = async () => {
     const permisos = Object.entries(permissionsState)
-      .filter(([, p]) => p.puede_ver || p.puede_crear || p.puede_editar || p.puede_eliminar)
-      .map(([formularioId, p]) => ({
-        formulario_id: Number(formularioId),
-        puede_ver: p.puede_ver,
-        puede_crear: p.puede_crear,
-        puede_editar: p.puede_editar,
-        puede_eliminar: p.puede_eliminar,
+      .filter(([, p]) => p.can_view || p.can_create || p.can_edit || p.can_delete)
+      .map(([formId, p]) => ({
+        form_id: Number(formId),
+        can_view: p.can_view,
+        can_create: p.can_create,
+        can_edit: p.can_edit,
+        can_delete: p.can_delete,
       }))
 
     try {
@@ -171,7 +171,7 @@ export const RolesManagementPage = () => {
 
   const columns = [
     {
-      field: 'nombre',
+      field: 'name',
       headerName: 'Nombre',
       flex: 1,
       minWidth: 150,
@@ -181,7 +181,7 @@ export const RolesManagementPage = () => {
       },
     },
     {
-      field: 'descripcion',
+      field: 'description',
       headerName: 'Descripción',
       flex: 2,
       minWidth: 250,
@@ -274,15 +274,15 @@ export const RolesManagementPage = () => {
           <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
             <TextField
               label="Nombre"
-              {...register('nombre', { required: 'El nombre es requerido' })}
-              error={!!errors.nombre}
-              helperText={errors.nombre?.message}
+              {...register('name', { required: 'El nombre es requerido' })}
+              error={!!errors.name}
+              helperText={errors.name?.message}
               fullWidth
               size="small"
             />
             <TextField
               label="Descripción"
-              {...register('descripcion')}
+              {...register('description')}
               fullWidth
               size="small"
               multiline
@@ -306,7 +306,7 @@ export const RolesManagementPage = () => {
         fullWidth
       >
         <DialogTitle>
-          Permisos del Rol: {roles.find((r) => r.id === selectedRoleId)?.nombre}
+          Permisos del Rol: {roles.find((r) => r.id === selectedRoleId)?.name}
         </DialogTitle>
         <DialogContent>
           {isRoleDetailFetching && (
@@ -326,35 +326,35 @@ export const RolesManagementPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {formularios.map((f) => (
+                {forms.map((f) => (
                   <TableRow key={f.id}>
-                    <TableCell>{f.nombre}</TableCell>
+                    <TableCell>{f.name}</TableCell>
                     <TableCell align="center">
                       <Checkbox
                         size="small"
-                        checked={permissionsState[f.id]?.puede_ver || false}
-                        onChange={(e) => handlePermissionChange(f.id, 'puede_ver', e.target.checked)}
+                        checked={permissionsState[f.id]?.can_view || false}
+                        onChange={(e) => handlePermissionChange(f.id, 'can_view', e.target.checked)}
                       />
                     </TableCell>
                     <TableCell align="center">
                       <Checkbox
                         size="small"
-                        checked={permissionsState[f.id]?.puede_crear || false}
-                        onChange={(e) => handlePermissionChange(f.id, 'puede_crear', e.target.checked)}
+                        checked={permissionsState[f.id]?.can_create || false}
+                        onChange={(e) => handlePermissionChange(f.id, 'can_create', e.target.checked)}
                       />
                     </TableCell>
                     <TableCell align="center">
                       <Checkbox
                         size="small"
-                        checked={permissionsState[f.id]?.puede_editar || false}
-                        onChange={(e) => handlePermissionChange(f.id, 'puede_editar', e.target.checked)}
+                        checked={permissionsState[f.id]?.can_edit || false}
+                        onChange={(e) => handlePermissionChange(f.id, 'can_edit', e.target.checked)}
                       />
                     </TableCell>
                     <TableCell align="center">
                       <Checkbox
                         size="small"
-                        checked={permissionsState[f.id]?.puede_eliminar || false}
-                        onChange={(e) => handlePermissionChange(f.id, 'puede_eliminar', e.target.checked)}
+                        checked={permissionsState[f.id]?.can_delete || false}
+                        onChange={(e) => handlePermissionChange(f.id, 'can_delete', e.target.checked)}
                       />
                     </TableCell>
                   </TableRow>

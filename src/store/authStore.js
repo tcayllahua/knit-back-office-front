@@ -21,15 +21,15 @@ export const useAuthStore = create(
         try {
           logger.debug('Auth', `Obteniendo rol para userId: ${userId}`)
           const { data, error } = await supabase
-            .from('usuarios')
-            .select('roles(nombre)')
+            .from('users')
+            .select('roles(name)')
             .eq('id_auth', userId)
             .single()
           if (error) {
             logger.warn('Auth', 'No se pudo obtener rol de usuario', error)
             return null
           }
-          const role = data?.roles?.nombre || null
+          const role = data?.roles?.name || null
           logger.info('Auth', `Rol obtenido: ${role}`)
           return role
         } catch (err) {
@@ -52,11 +52,11 @@ export const useAuthStore = create(
           if (session?.user) {
             logger.info('Auth', `Sesión activa encontrada para: ${session.user.email}`)
             const { data: userData } = await supabase
-              .from('usuarios')
-              .select('roles(nombre)')
+              .from('users')
+              .select('roles(name)')
               .eq('id_auth', session.user.id)
               .single()
-            const roleName = userData?.roles?.nombre || null
+            const roleName = userData?.roles?.name || null
             set({ user: session.user, authenticated: true, userRole: roleName })
             logger.info('Auth', `Usuario autenticado con rol: ${roleName}`)
           } else {
@@ -83,11 +83,11 @@ export const useAuthStore = create(
           if (error) throw error
 
           const { data: userData } = await supabase
-            .from('usuarios')
-            .select('roles(nombre)')
+            .from('users')
+            .select('roles(name)')
             .eq('id_auth', data.user.id)
             .single()
-          const roleName = userData?.roles?.nombre || null
+          const roleName = userData?.roles?.name || null
 
           set({ user: data.user, authenticated: true, userRole: roleName })
           logger.info('Auth', `Login exitoso: ${email} (rol: ${roleName})`)
@@ -182,16 +182,19 @@ export const useAuthStore = create(
           const { data: defaultRole } = await supabase
             .from('roles')
             .select('id')
-            .eq('nombre', 'usuario')
+            .eq('name', 'usuario')
             .single()
 
-          // Insert user data into usuarios table
-          const { error: insertError } = await supabase.from('usuarios').insert({
+          // Insert user data into users table
+          const { error: insertError } = await supabase.from('users').insert({
             id_auth: data.user.id,
             email,
-            nombre: userData.nombre,
-            apellido: userData.apellido,
-            rol_id: defaultRole?.id || null,
+            first_name: userData.first_name,
+            paternal_last_name: userData.paternal_last_name,
+            maternal_last_name: userData.maternal_last_name || null,
+            country: userData.country || null,
+            country_code: userData.country_code || null,
+            role_id: defaultRole?.id || null,
           })
 
           if (insertError) throw insertError

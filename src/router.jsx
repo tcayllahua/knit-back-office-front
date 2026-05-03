@@ -131,16 +131,16 @@ export const router = createBrowserRouter([
         element: <RoutePermissionGuard route="/proveedores"><ProveedorFormPage /></RoutePermissionGuard>,
       },
       {
-        path: 'configuraciones',
-        element: <RoutePermissionGuard route="/configuraciones"><HqpdsConfigurationsPage /></RoutePermissionGuard>,
+        path: 'programas',
+        element: <RoutePermissionGuard route="/programas"><HqpdsConfigurationsPage /></RoutePermissionGuard>,
       },
       {
-        path: 'configuraciones/nueva',
-        element: <RoutePermissionGuard route="/configuraciones"><HqpdsConfigurationFormPage /></RoutePermissionGuard>,
+        path: 'programas/nueva',
+        element: <RoutePermissionGuard route="/programas"><HqpdsConfigurationFormPage /></RoutePermissionGuard>,
       },
       {
-        path: 'configuraciones/editar/:id',
-        element: <RoutePermissionGuard route="/configuraciones"><HqpdsConfigurationFormPage /></RoutePermissionGuard>,
+        path: 'programas/editar/:id',
+        element: <RoutePermissionGuard route="/programas"><HqpdsConfigurationFormPage /></RoutePermissionGuard>,
       },
       {
         path: 'admin/usuarios',
@@ -154,6 +154,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/" replace />,
+    element: <Navigate to="/login" replace />,
   },
 ])

@@ -19,12 +19,12 @@ import {
 } from '../hooks/mutations'
 
 const DEFAULT_VALUES = {
-  razon_social: '',
-  ruc: '',
-  direccion: '',
+  business_name: '',
+  tax_id: '',
+  address: '',
   email: '',
-  telefono: '',
-  celular: '',
+  phone: '',
+  mobile: '',
 }
 
 export const ProveedorFormPage = () => {
@@ -47,12 +47,12 @@ export const ProveedorFormPage = () => {
   useEffect(() => {
     if (provider) {
       reset({
-        razon_social: provider.razon_social ?? '',
-        ruc: provider.ruc ?? '',
-        direccion: provider.direccion ?? '',
+        business_name: provider.business_name ?? '',
+        tax_id: provider.tax_id ?? '',
+        address: provider.address ?? '',
         email: provider.email ?? '',
-        telefono: provider.telefono ?? '',
-        celular: provider.celular ?? '',
+        phone: provider.phone ?? '',
+        mobile: provider.mobile ?? '',
       })
     }
   }, [provider, reset])
@@ -98,27 +98,27 @@ export const ProveedorFormPage = () => {
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
-                {...register('razon_social', {
+                {...register('business_name', {
                   required: 'La razón social es requerida',
                   minLength: { value: 3, message: 'Mínimo 3 caracteres' },
                 })}
                 fullWidth
                 label="Razón social *"
-                error={!!errors.razon_social}
-                helperText={errors.razon_social?.message}
+                error={!!errors.business_name}
+                helperText={errors.business_name?.message}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
-                {...register('ruc', {
+                {...register('tax_id', {
                   required: 'El RUC es requerido',
                   minLength: { value: 8, message: 'RUC inválido' },
                 })}
                 fullWidth
                 label="RUC *"
-                error={!!errors.ruc}
-                helperText={errors.ruc?.message}
+                error={!!errors.tax_id}
+                helperText={errors.tax_id?.message}
               />
             </Grid>
 
@@ -140,37 +140,37 @@ export const ProveedorFormPage = () => {
 
             <Grid item xs={12}>
               <TextField
-                {...register('direccion', {
+                {...register('address', {
                   required: 'La dirección es requerida',
                 })}
                 fullWidth
                 label="Dirección *"
-                error={!!errors.direccion}
-                helperText={errors.direccion?.message}
+                error={!!errors.address}
+                helperText={errors.address?.message}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
-                {...register('telefono', {
+                {...register('phone', {
                   required: 'El teléfono es requerido',
                 })}
                 fullWidth
                 label="Teléfono *"
-                error={!!errors.telefono}
-                helperText={errors.telefono?.message}
+                error={!!errors.phone}
+                helperText={errors.phone?.message}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
-                {...register('celular', {
+                {...register('mobile', {
                   required: 'El celular es requerido',
                 })}
                 fullWidth
                 label="Celular *"
-                error={!!errors.celular}
-                helperText={errors.celular?.message}
+                error={!!errors.mobile}
+                helperText={errors.mobile?.message}
               />
             </Grid>
           </Grid>

@@ -33,7 +33,7 @@ import { useGetProviders } from '../hooks/queries'
 import { useCreateProvidersBulkMutation, useDeleteProviderMutation, useRestoreProviderMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 
-const REQUIRED_FIELDS = ['razon_social', 'ruc', 'direccion', 'email', 'telefono', 'celular']
+const REQUIRED_FIELDS = ['business_name', 'tax_id', 'address', 'email', 'phone', 'mobile']
 
 const normalizeHeader = (value) =>
   String(value || '')
@@ -45,21 +45,26 @@ const normalizeHeader = (value) =>
 
 const normalizeRow = (row) => {
   const keyMap = {
-    razonsocial: 'razon_social',
-    ruc: 'ruc',
-    direccion: 'direccion',
+    razonsocial: 'business_name',
+    businessname: 'business_name',
+    ruc: 'tax_id',
+    taxid: 'tax_id',
+    direccion: 'address',
+    address: 'address',
     email: 'email',
-    telefono: 'telefono',
-    celular: 'celular',
+    telefono: 'phone',
+    phone: 'phone',
+    celular: 'mobile',
+    mobile: 'mobile',
   }
 
   const normalized = {
-    razon_social: '',
-    ruc: '',
-    direccion: '',
+    business_name: '',
+    tax_id: '',
+    address: '',
     email: '',
-    telefono: '',
-    celular: '',
+    phone: '',
+    mobile: '',
   }
 
   Object.entries(row).forEach(([key, value]) => {
@@ -100,8 +105,8 @@ export const ProveedoresPage = () => {
   const filtered = items.filter((item) => {
     const q = searchText.toLowerCase()
     return (
-      item.razon_social?.toLowerCase().includes(q) ||
-      item.ruc?.toLowerCase().includes(q) ||
+      item.business_name?.toLowerCase().includes(q) ||
+      item.tax_id?.toLowerCase().includes(q) ||
       item.email?.toLowerCase().includes(q)
     )
   })
@@ -170,12 +175,12 @@ export const ProveedoresPage = () => {
   const handleDownloadTemplate = () => {
     const templateRows = [
       {
-        razon_social: 'Textiles Andinos SAC',
-        ruc: '20123456789',
-        direccion: 'Av. Industrial 123, Lima',
+        business_name: 'Textiles Andinos SAC',
+        tax_id: '20123456789',
+        address: 'Av. Industrial 123, Lima',
         email: 'contacto@textilesandinos.com',
-        telefono: '014123456',
-        celular: '987654321',
+        phone: '014123456',
+        mobile: '987654321',
       },
     ]
 
@@ -188,12 +193,12 @@ export const ProveedoresPage = () => {
   }
 
   const columns = [
-    { field: 'razon_social', headerName: 'Razón social', flex: 1, minWidth: 180 },
-    { field: 'ruc', headerName: 'RUC', width: 150 },
-    { field: 'direccion', headerName: 'Dirección', flex: 1, minWidth: 180 },
+    { field: 'business_name', headerName: 'Razón social', flex: 1, minWidth: 180 },
+    { field: 'tax_id', headerName: 'RUC', width: 150 },
+    { field: 'address', headerName: 'Dirección', flex: 1, minWidth: 180 },
     { field: 'email', headerName: 'Email', flex: 1, minWidth: 190 },
-    { field: 'telefono', headerName: 'Teléfono', width: 130 },
-    { field: 'celular', headerName: 'Celular', width: 130 },
+    { field: 'phone', headerName: 'Teléfono', width: 130 },
+    { field: 'mobile', headerName: 'Celular', width: 130 },
     {
       field: 'acciones',
       headerName: 'Acciones',
@@ -304,7 +309,7 @@ export const ProveedoresPage = () => {
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Eliminar el proveedor "{selectedItem?.razon_social}"? Esta acción no se puede deshacer.
+            ¿Eliminar el proveedor "{selectedItem?.business_name}"? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

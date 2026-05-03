@@ -19,16 +19,16 @@ import {
 } from '../hooks/mutations'
 
 const DEFAULT_VALUES = {
-  codigo_hilo: '',
-  nombre_hilo: '',
-  composicion: '',
-  abrev: '',
-  instrucciones_cuidado: '',
-  presentacion: '',
-  peso: '',
-  unidad_medida: '',
-  codigo_color_hex: '',
-  color_descripcion: '',
+  thread_code: '',
+  thread_name: '',
+  composition: '',
+  abbreviation: '',
+  care_instructions: '',
+  presentation: '',
+  weight: '',
+  unit_of_measure: '',
+  hex_color_code: '',
+  color_description: '',
 }
 
 export const HiloFormPage = () => {
@@ -49,22 +49,22 @@ export const HiloFormPage = () => {
     formState: { errors, isSubmitting },
   } = useForm({ defaultValues: DEFAULT_VALUES })
 
-  const colorHexValue = watch('codigo_color_hex')
+  const colorHexValue = watch('hex_color_code')
   const isValidHexColor = /^#([A-Fa-f0-9]{6})$/.test(colorHexValue || '')
 
   useEffect(() => {
     if (thread) {
       reset({
-        codigo_hilo: thread.codigo_hilo ?? '',
-        nombre_hilo: thread.nombre_hilo ?? '',
-        composicion: thread.composicion ?? '',
-        abrev: thread.abrev ?? '',
-        instrucciones_cuidado: thread.instrucciones_cuidado ?? '',
-        presentacion: thread.presentacion ?? '',
-        peso: thread.peso ?? '',
-        unidad_medida: thread.unidad_medida ?? '',
-        codigo_color_hex: thread.codigo_color_hex ?? '',
-        color_descripcion: thread.color_descripcion ?? '',
+        thread_code: thread.thread_code ?? '',
+        thread_name: thread.thread_name ?? '',
+        composition: thread.composition ?? '',
+        abbreviation: thread.abbreviation ?? '',
+        care_instructions: thread.care_instructions ?? '',
+        presentation: thread.presentation ?? '',
+        weight: thread.weight ?? '',
+        unit_of_measure: thread.unit_of_measure ?? '',
+        hex_color_code: thread.hex_color_code ?? '',
+        color_description: thread.color_description ?? '',
       })
     }
   }, [thread, reset])
@@ -116,26 +116,26 @@ export const HiloFormPage = () => {
 
             <Grid item xs={12} sm={3}>
               <TextField
-                {...register('codigo_hilo', {
+                {...register('thread_code', {
                   required: 'El código del hilo es requerido',
                 })}
                 fullWidth
                 label="Código Hilo *"
-                error={!!errors.codigo_hilo}
-                helperText={errors.codigo_hilo?.message}
+                error={!!errors.thread_code}
+                helperText={errors.thread_code?.message}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                {...register('nombre_hilo')}
+                {...register('thread_name')}
                 fullWidth
                 label="Nombre Hilo"
-                error={!!errors.nombre_hilo}
-                helperText={errors.nombre_hilo?.message}
+                error={!!errors.thread_name}
+                helperText={errors.thread_name?.message}
               />
             </Grid>
             <Grid item xs={12} sm={3}>
-              <TextField {...register('abrev')} fullWidth label="Abrev" error={!!errors.abrev} helperText={errors.abrev?.message} />
+              <TextField {...register('abbreviation')} fullWidth label="Abrev" error={!!errors.abbreviation} helperText={errors.abbreviation?.message} />
             </Grid>
 
             <Grid item xs={12}>
@@ -149,38 +149,38 @@ export const HiloFormPage = () => {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField {...register('composicion')} fullWidth label="Composición" error={!!errors.composicion} helperText={errors.composicion?.message} />
+              <TextField {...register('composition')} fullWidth label="Composición" error={!!errors.composition} helperText={errors.composition?.message} />
             </Grid>
             <Grid item xs={12} sm={3}>
               <TextField
-                {...register('presentacion')}
+                {...register('presentation')}
                 fullWidth
                 label="Presentación"
-                error={!!errors.presentacion}
-                helperText={errors.presentacion?.message}
+                error={!!errors.presentation}
+                helperText={errors.presentation?.message}
               />
             </Grid>
 
             <Grid item xs={12} sm={4}>
               <TextField
-                {...register('peso', {
+                {...register('weight', {
                   validate: (value) => value === '' || Number(value) >= 0 || 'Debe ser positivo',
                 })}
                 fullWidth
                 label="Peso"
                 type="number"
                 inputProps={{ step: '0.01' }}
-                error={!!errors.peso}
-                helperText={errors.peso?.message}
+                error={!!errors.weight}
+                helperText={errors.weight?.message}
               />
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
-                {...register('unidad_medida')}
+                {...register('unit_of_measure')}
                 fullWidth
                 label="Unidad de medida"
-                error={!!errors.unidad_medida}
-                helperText={errors.unidad_medida?.message}
+                error={!!errors.unit_of_measure}
+                helperText={errors.unit_of_measure?.message}
               />
             </Grid>
 
@@ -196,16 +196,16 @@ export const HiloFormPage = () => {
 
             <Grid item xs={12} sm={4}>
               <TextField
-                {...register('color_descripcion')}
+                {...register('color_description')}
                 fullWidth
                 label="Color Descripción"
-                error={!!errors.color_descripcion}
-                helperText={errors.color_descripcion?.message}
+                error={!!errors.color_description}
+                helperText={errors.color_description?.message}
               />
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
-                {...register('codigo_color_hex', {
+                {...register('hex_color_code', {
                   validate: (value) => {
                     if (!value) return true
                     return /^#([A-Fa-f0-9]{6})$/.test(value) || 'Formato válido: #RRGGBB'
@@ -213,8 +213,8 @@ export const HiloFormPage = () => {
                 })}
                 fullWidth
                 label="Código color hex"
-                error={!!errors.codigo_color_hex}
-                helperText={errors.codigo_color_hex?.message}
+                error={!!errors.hex_color_code}
+                helperText={errors.hex_color_code?.message}
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -248,13 +248,13 @@ export const HiloFormPage = () => {
 
             <Grid item xs={12}>
               <TextField
-                {...register('instrucciones_cuidado')}
+                {...register('care_instructions')}
                 fullWidth
                 label="Instrucciones de Cuidado"
                 multiline
                 rows={2}
-                error={!!errors.instrucciones_cuidado}
-                helperText={errors.instrucciones_cuidado?.message}
+                error={!!errors.care_instructions}
+                helperText={errors.care_instructions?.message}
               />
             </Grid>
           </Grid>

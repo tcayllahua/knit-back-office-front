@@ -29,7 +29,7 @@ export const ProtectedRoute = ({ children, requiredRoute }) => {
   // If a specific route is required, check permissions
   if (requiredRoute && permissionsData?.permissions) {
     const hasAccess = permissionsData.permissions.some(
-      (p) => p.ruta === requiredRoute && p.puede_ver
+      (p) => p.route === requiredRoute && p.can_view
     )
     // Admin always has access
     if (!hasAccess && userRole !== 'admin') {

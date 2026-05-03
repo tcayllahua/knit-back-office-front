@@ -39,8 +39,9 @@ export const RegisterPage = () => {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      nombre: '',
-      apellido: '',
+      first_name: '',
+      paternal_last_name: '',
+      maternal_last_name: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -53,8 +54,9 @@ export const RegisterPage = () => {
   const onSubmit = async (data) => {
     try {
       await register(data.email, data.password, {
-        nombre: data.nombre,
-        apellido: data.apellido,
+        first_name: data.first_name,
+        paternal_last_name: data.paternal_last_name,
+        maternal_last_name: data.maternal_last_name || '',
         country: data.country?.name || '',
         country_code: data.country?.code || '',
       })
@@ -83,7 +85,7 @@ export const RegisterPage = () => {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <TextField
             {
-              ...registerField('nombre', {
+              ...registerField('first_name', {
                 required: 'Nombre es requerido',
                 minLength: {
                   value: 3,
@@ -94,25 +96,34 @@ export const RegisterPage = () => {
             fullWidth
             label="Nombre"
             margin="normal"
-            error={!!errors.nombre}
-            helperText={errors.nombre?.message}
+            error={!!errors.first_name}
+            helperText={errors.first_name?.message}
           />
 
           <TextField
             {
-              ...registerField('apellido', {
-                required: 'Apellido es requerido',
+              ...registerField('paternal_last_name', {
+                required: 'Apellido paterno es requerido',
                 minLength: {
-                  value: 3,
-                  message: 'Mínimo 3 caracteres',
+                  value: 2,
+                  message: 'Mínimo 2 caracteres',
                 },
               })
             }
             fullWidth
-            label="Apellido"
+            label="Apellido Paterno"
             margin="normal"
-            error={!!errors.apellido}
-            helperText={errors.apellido?.message}
+            error={!!errors.paternal_last_name}
+            helperText={errors.paternal_last_name?.message}
+          />
+
+          <TextField
+            {
+              ...registerField('maternal_last_name')
+            }
+            fullWidth
+            label="Apellido Materno"
+            margin="normal"
           />
 
           <TextField

@@ -33,19 +33,19 @@ import { useGetThreads } from '../hooks/queries'
 import { useCreateThreadsBulkMutation, useDeleteThreadMutation, useRestoreThreadMutation } from '../hooks/mutations'
 import { useHeaderActions } from '../components/HeaderActionsContext'
 
-const REQUIRED_FIELDS = ['codigo_hilo']
+const REQUIRED_FIELDS = ['thread_code']
 
 const TEMPLATE_FIELDS = [
-  'codigo_hilo',
-  'nombre_hilo',
-  'composicion',
-  'abrev',
-  'instrucciones_cuidado',
-  'presentacion',
-  'peso',
-  'unidad_medida',
-  'codigo_color_hex',
-  'color_descripcion',
+  'thread_code',
+  'thread_name',
+  'composition',
+  'abbreviation',
+  'care_instructions',
+  'presentation',
+  'weight',
+  'unit_of_measure',
+  'hex_color_code',
+  'color_description',
 ]
 
 const normalizeHeader = (value) =>
@@ -58,32 +58,42 @@ const normalizeHeader = (value) =>
 
 const normalizeRow = (row) => {
   const keyMap = {
-    codigohilo: 'codigo_hilo',
-    nombrehilo: 'nombre_hilo',
-    composicion: 'composicion',
-    abrev: 'abrev',
-    instruccionesdecuidado: 'instrucciones_cuidado',
-    instrucionesdecuidado: 'instrucciones_cuidado',
-    instrucciondecuidado: 'instrucciones_cuidado',
-    instruccionescuidado: 'instrucciones_cuidado',
-    presentacion: 'presentacion',
-    peso: 'peso',
-    unidaddemedida: 'unidad_medida',
-    codigocolorhex: 'codigo_color_hex',
-    colordescripcion: 'color_descripcion',
+    codigohilo: 'thread_code',
+    threadcode: 'thread_code',
+    nombrehilo: 'thread_name',
+    threadname: 'thread_name',
+    composicion: 'composition',
+    composition: 'composition',
+    abrev: 'abbreviation',
+    abbreviation: 'abbreviation',
+    instruccionesdecuidado: 'care_instructions',
+    instrucionesdecuidado: 'care_instructions',
+    instrucciondecuidado: 'care_instructions',
+    instruccionescuidado: 'care_instructions',
+    careinstructions: 'care_instructions',
+    presentacion: 'presentation',
+    presentation: 'presentation',
+    peso: 'weight',
+    weight: 'weight',
+    unidaddemedida: 'unit_of_measure',
+    unitofmeasure: 'unit_of_measure',
+    codigocolorhex: 'hex_color_code',
+    hexcolorcode: 'hex_color_code',
+    colordescripcion: 'color_description',
+    colordescription: 'color_description',
   }
 
   const normalized = {
-    codigo_hilo: '',
-    nombre_hilo: '',
-    composicion: '',
-    abrev: '',
-    instrucciones_cuidado: '',
-    presentacion: '',
-    peso: '',
-    unidad_medida: '',
-    codigo_color_hex: '',
-    color_descripcion: '',
+    thread_code: '',
+    thread_name: '',
+    composition: '',
+    abbreviation: '',
+    care_instructions: '',
+    presentation: '',
+    weight: '',
+    unit_of_measure: '',
+    hex_color_code: '',
+    color_description: '',
   }
 
   Object.entries(row).forEach(([key, value]) => {
@@ -113,9 +123,9 @@ export const HilosPage = () => {
   const filtered = items.filter((item) => {
     const q = searchText.toLowerCase()
     return (
-      item.codigo_hilo?.toLowerCase().includes(q) ||
-      item.nombre_hilo?.toLowerCase().includes(q) ||
-      item.color_descripcion?.toLowerCase().includes(q)
+      item.thread_code?.toLowerCase().includes(q) ||
+      item.thread_name?.toLowerCase().includes(q) ||
+      item.color_description?.toLowerCase().includes(q)
     )
   })
 
@@ -183,16 +193,16 @@ export const HilosPage = () => {
   const handleDownloadTemplate = () => {
     const templateRows = [
       {
-        codigo_hilo: 'H-001',
-        nombre_hilo: 'ALGODON 24/1',
-        composicion: '100% ALGODON',
-        abrev: 'ALG24',
-        instrucciones_cuidado: 'LAVAR A MANO',
-        presentacion: 'CONO',
-        peso: 500,
-        unidad_medida: 'GRAMOS',
-        codigo_color_hex: '#FFFFFF',
-        color_descripcion: 'BLANCO',
+        thread_code: 'H-001',
+        thread_name: 'ALGODON 24/1',
+        composition: '100% ALGODON',
+        abbreviation: 'ALG24',
+        care_instructions: 'LAVAR A MANO',
+        presentation: 'CONO',
+        weight: 500,
+        unit_of_measure: 'GRAMOS',
+        hex_color_code: '#FFFFFF',
+        color_description: 'BLANCO',
       },
     ]
 
@@ -205,12 +215,12 @@ export const HilosPage = () => {
   }
 
   const columns = [
-    { field: 'codigo_hilo', headerName: 'Código Hilo', width: 130 },
-    { field: 'nombre_hilo', headerName: 'Nombre Hilo', flex: 1, minWidth: 170 },
-    { field: 'composicion', headerName: 'Composición', width: 170 },
-    { field: 'abrev', headerName: 'Abrev', width: 100 },
-    { field: 'presentacion', headerName: 'Presentación', width: 130 },
-    { field: 'color_descripcion', headerName: 'Color', width: 140 },
+    { field: 'thread_code', headerName: 'Código Hilo', width: 130 },
+    { field: 'thread_name', headerName: 'Nombre Hilo', flex: 1, minWidth: 170 },
+    { field: 'composition', headerName: 'Composición', width: 170 },
+    { field: 'abbreviation', headerName: 'Abrev', width: 100 },
+    { field: 'presentation', headerName: 'Presentación', width: 130 },
+    { field: 'color_description', headerName: 'Color', width: 140 },
     {
       field: 'vista_color',
       headerName: 'Vista',
@@ -219,7 +229,7 @@ export const HilosPage = () => {
       headerAlign: 'center',
       sortable: false,
       renderCell: (params) => {
-        const hex = params.row.codigo_color_hex
+        const hex = params.row.hex_color_code
         const isValidHex = /^#([A-Fa-f0-9]{6})$/.test(hex || '')
 
         return (
@@ -246,7 +256,7 @@ export const HilosPage = () => {
         )
       },
     },
-    { field: 'codigo_color_hex', headerName: 'Color Hex', width: 120 },
+    { field: 'hex_color_code', headerName: 'Color Hex', width: 120 },
     {
       field: 'acciones',
       headerName: 'Acciones',
@@ -368,7 +378,7 @@ export const HilosPage = () => {
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Eliminar el hilo "{selectedItem?.nombre_hilo}"? Esta acción no se puede deshacer.
+            ¿Eliminar el hilo "{selectedItem?.thread_name}"? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

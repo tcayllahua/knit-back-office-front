@@ -51,8 +51,8 @@ export const useGetUserProfile = (userId) => {
     queryKey: ['user-profile', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('usuarios')
-        .select('*, roles(nombre)')
+        .from('users')
+        .select('*, roles(name)')
         .eq('id_auth', userId)
         .single()
       if (error) throw error
@@ -207,9 +207,9 @@ export const useGetThreads = (showDeleted = false) => {
     queryKey: ['threads', showDeleted],
     queryFn: async () => {
       let query = supabase
-        .from('hilos')
+        .from('threads')
         .select('*')
-        .order('nombre_hilo', { ascending: true })
+        .order('thread_name', { ascending: true })
       if (!showDeleted) {
         query = query.is('deleted_at', null)
       }
@@ -226,7 +226,7 @@ export const useGetThread = (id) => {
     queryKey: ['thread', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('hilos')
+        .from('threads')
         .select('*')
         .eq('id', id)
         .single()
@@ -243,9 +243,9 @@ export const useGetProviders = (showDeleted = false) => {
     queryKey: ['providers', showDeleted],
     queryFn: async () => {
       let query = supabase
-        .from('proveedores')
+        .from('suppliers')
         .select('*')
-        .order('razon_social', { ascending: true })
+        .order('business_name', { ascending: true })
       if (!showDeleted) {
         query = query.is('deleted_at', null)
       }
@@ -262,7 +262,7 @@ export const useGetProvider = (id) => {
     queryKey: ['provider', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('proveedores')
+        .from('suppliers')
         .select('*')
         .eq('id', id)
         .single()
@@ -364,7 +364,7 @@ export const useGetRoles = () => {
       const { data, error } = await supabase
         .from('roles')
         .select('*')
-        .order('nombre', { ascending: true })
+        .order('name', { ascending: true })
       if (error) throw error
       return data
     },
@@ -378,7 +378,7 @@ export const useGetRole = (id) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('roles')
-        .select('*, rol_formulario(*, formularios(*))')
+        .select('*, role_form(*, forms(*))')
         .eq('id', id)
         .single()
       if (error) throw error
@@ -388,14 +388,14 @@ export const useGetRole = (id) => {
   })
 }
 
-export const useGetFormularios = () => {
+export const useGetForms = () => {
   return useQuery({
-    queryKey: ['formularios'],
+    queryKey: ['forms'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('formularios')
+        .from('forms')
         .select('*')
-        .order('orden', { ascending: true })
+        .order('sort_order', { ascending: true })
       if (error) throw error
       return data
     },
@@ -408,8 +408,8 @@ export const useGetUserPermissions = (userId) => {
     queryKey: ['user-permissions', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('usuarios')
-        .select('rol_id, roles(nombre, rol_formulario(puede_ver, puede_crear, puede_editar, puede_eliminar, formularios(nombre, ruta, icono, orden, is_active)))')
+        .from('users')
+        .select('role_id, roles(name, role_form(can_view, can_create, can_edit, can_delete, forms(name, route, icon, sort_order, is_active)))')
         .eq('id_auth', userId)
         .single()
       if (error) throw error
@@ -417,21 +417,21 @@ export const useGetUserPermissions = (userId) => {
       const role = data?.roles
       if (!role) return { roleName: null, permissions: [] }
 
-      const permissions = (role.rol_formulario || [])
-        .filter((rf) => rf.formularios?.is_active)
+      const permissions = (role.role_form || [])
+        .filter((rf) => rf.forms?.is_active)
         .map((rf) => ({
-          ruta: rf.formularios.ruta,
-          nombre: rf.formularios.nombre,
-          icono: rf.formularios.icono,
-          orden: rf.formularios.orden,
-          puede_ver: rf.puede_ver,
-          puede_crear: rf.puede_crear,
-          puede_editar: rf.puede_editar,
-          puede_eliminar: rf.puede_eliminar,
+          route: rf.forms.route,
+          name: rf.forms.name,
+          icon: rf.forms.icon,
+          sort_order: rf.forms.sort_order,
+          can_view: rf.can_view,
+          can_create: rf.can_create,
+          can_edit: rf.can_edit,
+          can_delete: rf.can_delete,
         }))
-        .sort((a, b) => a.orden - b.orden)
+        .sort((a, b) => a.sort_order - b.sort_order)
 
-      return { roleName: role.nombre, permissions }
+      return { roleName: role.name, permissions }
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
@@ -443,9 +443,9 @@ export const useGetAllUsers = () => {
     queryKey: ['all-users'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('usuarios')
-        .select('*, roles(nombre)')
-        .order('nombre', { ascending: true })
+        .from('users')
+        .select('*, roles(name)')
+        .order('first_name', { ascending: true })
       if (error) throw error
       return data
     },

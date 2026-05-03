@@ -15,12 +15,14 @@ import {
   Badge,
   Autocomplete,
   Chip,
+  InputAdornment,
 } from '@mui/material'
 import { PhotoCamera as PhotoCameraIcon } from '@mui/icons-material'
 import { toast } from 'sonner'
 import { useAuthStore } from '../store/authStore'
 import { useGetUserProfile } from '../hooks/queries'
 import { useUpdateUserProfileMutation } from '../hooks/mutations'
+import { getDialCode } from '../utils/phoneDialCodes'
 import countries from 'i18n-iso-countries'
 import esLocale from 'i18n-iso-countries/langs/es.json'
 
@@ -34,6 +36,7 @@ export const MiPerfilPage = () => {
   const user = useAuthStore((state) => state.user)
   const [profileImage, setProfileImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [phoneCode, setPhoneCode] = useState('')
 
   const { data: profile, isLoading: isProfileLoading } = useGetUserProfile(user?.id)
   const updateMutation = useUpdateUserProfileMutation(user?.id)
@@ -43,30 +46,37 @@ export const MiPerfilPage = () => {
     handleSubmit,
     reset,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      nombre: '',
-      apellido: '',
-      telefono: '',
-      direccion: '',
+      first_name: '',
+      paternal_last_name: '',
+      maternal_last_name: '',
+      phone: '',
+      address: '',
       country: null,
     },
   })
 
   useEffect(() => {
     if (profile) {
+      const countryObj = profile.country_code
+        ? COUNTRY_LIST.find(c => c.code === profile.country_code) || null
+        : null
       reset({
-        nombre: profile.nombre || '',
-        apellido: profile.apellido || '',
-        telefono: profile.telefono || '',
-        direccion: profile.direccion || '',
-        country: profile.country_code
-          ? COUNTRY_LIST.find(c => c.code === profile.country_code) || null
-          : null,
+        first_name: profile.first_name || '',
+        paternal_last_name: profile.paternal_last_name || '',
+        maternal_last_name: profile.maternal_last_name || '',
+        phone: profile.phone || '',
+        address: profile.address || '',
+        country: countryObj,
       })
-      if (profile.foto_perfil) {
-        setImagePreview(profile.foto_perfil)
+      if (countryObj) {
+        setPhoneCode(getDialCode(countryObj.code))
+      }
+      if (profile.profile_photo) {
+        setImagePreview(profile.profile_photo)
       }
     }
   }, [profile, reset])
@@ -87,7 +97,12 @@ export const MiPerfilPage = () => {
     try {
       await updateMutation.mutateAsync({
         profileData: {
-          ...data,
+          first_name: data.first_name,
+          paternal_last_name: data.paternal_last_name,
+          maternal_last_name: data.maternal_last_name || null,
+          phone: data.phone || null,
+          phone_code: phoneCode || null,
+          address: data.address || null,
           country: data.country?.name || '',
           country_code: data.country?.code || '',
         },
@@ -158,7 +173,7 @@ export const MiPerfilPage = () => {
               }
             >
               <Avatar
-                src={imagePreview || profile?.foto_perfil}
+                src={imagePreview || profile?.profile_photo}
                 sx={{
                   width: 80,
                   height: 80,
@@ -167,7 +182,7 @@ export const MiPerfilPage = () => {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 }}
               >
-                {profile?.nombre?.[0]?.toUpperCase() || 'U'}
+                {profile?.first_name?.[0]?.toUpperCase() || 'U'}
               </Avatar>
             </Badge>
 
@@ -201,25 +216,25 @@ export const MiPerfilPage = () => {
               helperText="No editable"
             />
 
-            {profile?.roles?.nombre && (
+            {profile?.roles?.name && (
               <Box sx={{ mt: 2, mb: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                   Rol
                 </Typography>
                 <Chip
-                  label={profile.roles.nombre.charAt(0).toUpperCase() + profile.roles.nombre.slice(1)}
+                  label={profile.roles.name.charAt(0).toUpperCase() + profile.roles.name.slice(1)}
                   color="primary"
                   variant="outlined"
                 />
               </Box>
             )}
 
-            {profile?.fecha_registro && (
+            {profile?.registration_date && (
               <TextField
                 fullWidth
                 label="Miembro desde"
                 value={(() => {
-                  const [y, m, d] = profile.fecha_registro.slice(0, 10).split('-')
+                  const [y, m, d] = profile.registration_date.slice(0, 10).split('-')
                   const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
                   return `${Number(d)} de ${months[Number(m) - 1]} de ${y}`
                 })()}
@@ -241,7 +256,7 @@ export const MiPerfilPage = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   {
-                    ...register('nombre', {
+                    ...register('first_name', {
                       required: 'Nombre es requerido',
                       minLength: {
                         value: 3,
@@ -253,28 +268,40 @@ export const MiPerfilPage = () => {
                   label="Nombre"
                   size="small"
                   margin="normal"
-                  error={!!errors.nombre}
-                  helperText={errors.nombre?.message}
+                  error={!!errors.first_name}
+                  helperText={errors.first_name?.message}
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
                   {
-                    ...register('apellido', {
-                      required: 'Apellido es requerido',
+                    ...register('paternal_last_name', {
+                      required: 'Apellido paterno es requerido',
                       minLength: {
-                        value: 3,
-                        message: 'Mínimo 3 caracteres',
+                        value: 2,
+                        message: 'Mínimo 2 caracteres',
                       },
                     })
                   }
                   fullWidth
-                  label="Apellido"
+                  label="Apellido Paterno"
                   size="small"
                   margin="normal"
-                  error={!!errors.apellido}
-                  helperText={errors.apellido?.message}
+                  error={!!errors.paternal_last_name}
+                  helperText={errors.paternal_last_name?.message}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  {
+                    ...register('maternal_last_name')
+                  }
+                  fullWidth
+                  label="Apellido Materno"
+                  size="small"
+                  margin="normal"
                 />
               </Grid>
 
@@ -288,7 +315,11 @@ export const MiPerfilPage = () => {
                       options={COUNTRY_LIST}
                       getOptionLabel={(option) => option.name}
                       value={value}
-                      onChange={(_, newValue) => onChange(newValue)}
+                      onChange={(_, newValue) => {
+                        onChange(newValue)
+                        const dialCode = newValue ? getDialCode(newValue.code) : ''
+                        setPhoneCode(dialCode)
+                      }}
                       isOptionEqualToValue={(option, val) => option.code === val.code}
                       renderInput={(params) => (
                         <TextField
@@ -308,21 +339,28 @@ export const MiPerfilPage = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   {
-                    ...register('telefono')
+                    ...register('phone')
                   }
                   fullWidth
                   label="Teléfono"
                   type="tel"
                   size="small"
                   margin="normal"
-                  placeholder="+34 123 456 789"
+                  placeholder="123 456 789"
+                  InputProps={{
+                    startAdornment: phoneCode ? (
+                      <InputAdornment position="start">
+                        {phoneCode}
+                      </InputAdornment>
+                    ) : null,
+                  }}
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
                 <TextField
                   {
-                    ...register('direccion')
+                    ...register('address')
                   }
                   fullWidth
                   label="Dirección"

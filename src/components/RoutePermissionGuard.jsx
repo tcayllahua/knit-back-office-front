@@ -16,7 +16,7 @@ export const RoutePermissionGuard = ({ route, children }) => {
   if (!permissionsData?.permissions) return children
 
   const hasAccess = permissionsData.permissions.some(
-    (p) => p.ruta === route && p.puede_ver
+    (p) => p.route === route && p.can_view
   )
 
   if (!hasAccess) {

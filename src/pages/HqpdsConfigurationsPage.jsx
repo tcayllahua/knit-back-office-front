@@ -70,7 +70,7 @@ export const HqpdsConfigurationsPage = () => {
 
   useEffect(() => {
     setActions(
-      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/configuraciones/nueva')}
+      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/programas/nueva')}
         sx={{ bgcolor: '#1e1e1e', '&:hover': { bgcolor: '#333' }, '& .MuiButton-startIcon': { transition: 'transform 0.3s' }, '&:hover .MuiButton-startIcon': { transform: 'rotate(90deg)' } }}
       >
         Nuevo Programa
@@ -209,7 +209,7 @@ export const HqpdsConfigurationsPage = () => {
             <>
               <IconButton
                 size="small"
-                onClick={(e) => { e.stopPropagation(); navigate(`/configuraciones/editar/${params.row.id}`) }}
+                onClick={(e) => { e.stopPropagation(); navigate(`/programas/editar/${params.row.id}`) }}
                 title="Editar"
               >
                 <EditIcon fontSize="small" />
@@ -360,7 +360,7 @@ export const HqpdsConfigurationsPage = () => {
               },
             }}
             disableSelectionOnClick
-            onRowClick={(params) => !params.row.deleted_at && navigate(`/configuraciones/editar/${params.row.id}`)}
+            onRowClick={(params) => !params.row.deleted_at && navigate(`/programas/editar/${params.row.id}`)}
             getRowClassName={(params) => params.row.deleted_at ? 'deleted-row' : ''}
             sx={{ cursor: 'pointer', border: 'none', '& .deleted-row': { opacity: 0.45, bgcolor: 'action.hover' } }}
           />

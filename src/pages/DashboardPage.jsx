@@ -120,7 +120,7 @@ export const DashboardPage = () => {
                           '&:hover': { boxShadow: 4, transform: 'translateY(-2px)' },
                         }}
                       >
-                        <CardActionArea onClick={() => navigate(`/configuraciones/editar/${config.id}`)}>
+                        <CardActionArea onClick={() => navigate(`/programas/editar/${config.id}`)}>
                           {thumbUrl ? (
                             <CardMedia
                               component="img"

@@ -145,8 +145,8 @@ const DashboardLayoutInner = () => {
     try {
       await logout()
       navigate('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
+    } catch {
+      // silenced
     }
     handleMenuClose()
   }
@@ -161,36 +161,36 @@ const DashboardLayoutInner = () => {
   const showDrawer = activeSection !== 'inicio' && !drawerCollapsed
 
   const navigationItems = (permissionsData?.permissions || [])
-    .filter((p) => p.puede_ver && !SETTINGS_ROUTES.includes(p.ruta) && !ADMIN_ROUTES.includes(p.ruta))
+    .filter((p) => p.can_view && !SETTINGS_ROUTES.includes(p.route) && !ADMIN_ROUTES.includes(p.route))
     .map((p) => ({
-      label: p.nombre,
-      icon: ICON_MAP[p.icono] || <DashboardIcon />,
-      path: p.ruta,
+      label: p.name,
+      icon: ICON_MAP[p.icon] || <DashboardIcon />,
+      path: p.route,
     }))
 
   const settingsSubItems = (permissionsData?.permissions || [])
-    .filter((p) => p.puede_ver && SETTINGS_ROUTES.includes(p.ruta))
+    .filter((p) => p.can_view && SETTINGS_ROUTES.includes(p.route))
     .map((p) => ({
-      label: p.nombre,
-      icon: ICON_MAP[p.icono] ? <p.icono /> : <CableIcon fontSize="small" />,
-      path: p.ruta,
+      label: p.name,
+      icon: ICON_MAP[p.icon] ? <p.icon /> : <CableIcon fontSize="small" />,
+      path: p.route,
     }))
     // Use proper icons for settings sub-items
     .map((item) => ({
       ...item,
-      icon: ICON_MAP[(permissionsData?.permissions || []).find((p) => p.ruta === item.path)?.icono] || <CableIcon fontSize="small" />,
+      icon: ICON_MAP[(permissionsData?.permissions || []).find((p) => p.route === item.path)?.icon] || <CableIcon fontSize="small" />,
     }))
 
   const adminSubItems = (permissionsData?.permissions || [])
-    .filter((p) => p.puede_ver && ADMIN_ROUTES.includes(p.ruta))
+    .filter((p) => p.can_view && ADMIN_ROUTES.includes(p.route))
     .map((p) => ({
-      label: p.nombre,
-      icon: ICON_MAP[p.icono] || <AdminPanelSettingsIcon fontSize="small" />,
-      path: p.ruta,
+      label: p.name,
+      icon: ICON_MAP[p.icon] || <AdminPanelSettingsIcon fontSize="small" />,
+      path: p.route,
     }))
 
   const currentPageLabel = (() => {
-    if (location.pathname.startsWith('/configuraciones')) return 'Programa Hqpds'
+    if (location.pathname.startsWith('/programas')) return 'Programa Hqpds'
     if (location.pathname.startsWith('/materiales')) return 'Materiales'
     if (location.pathname.startsWith('/hilos')) return 'Hilos'
     if (location.pathname.startsWith('/proveedores')) return 'Proveedores'

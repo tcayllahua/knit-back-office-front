@@ -521,7 +521,7 @@ export const HqpdsConfigurationFormPage = () => {
         setValue('version', createdConfiguration.version, { shouldDirty: false })
         setIsEditingMode(false)
         setIsNewVersioning(false)
-        navigate(`/configuraciones/editar/${createdConfiguration.id}`)
+        navigate(`/programas/editar/${createdConfiguration.id}`)
         return
       } else if (isEditMode && isEditingMode) {
         // Editar: actualizar sobre la misma versión
@@ -567,7 +567,7 @@ export const HqpdsConfigurationFormPage = () => {
           await updateMutation.mutateAsync({ id: createdConfiguration.id, data: { ...data, hqpds_id: finalHqpdsId } })
         }
         setValue('version', createdConfiguration.version, { shouldDirty: false })
-        navigate(`/configuraciones/editar/${createdConfiguration.id}`)
+        navigate(`/programas/editar/${createdConfiguration.id}`)
         return
       }
     } catch {
@@ -1341,7 +1341,7 @@ export const HqpdsConfigurationFormPage = () => {
                     e.preventDefault()
                     e.stopPropagation()
                     if (!isEditMode) {
-                      navigate('/configuraciones')
+                      navigate('/programas')
                     } else {
                       setIsEditingMode(false)
                       setIsNewVersioning(false)
@@ -1386,7 +1386,7 @@ export const HqpdsConfigurationFormPage = () => {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    navigate('/configuraciones')
+                    navigate('/programas')
                   }}
                 >
                   Cancelar

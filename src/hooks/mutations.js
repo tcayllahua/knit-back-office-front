@@ -91,7 +91,7 @@ export const useUpdateUserProfileMutation = (userId) => {
       logger.info('Mutations', 'Actualizando perfil de usuario')
       // Update profile data
       const { error: updateError } = await supabase
-        .from('usuarios')
+        .from('users')
         .update(profileData)
         .eq('id_auth', userId)
 
@@ -122,8 +122,8 @@ export const useUpdateUserProfileMutation = (userId) => {
             .getPublicUrl(`profile-photos/${fileName}`)
 
           const { error: urlUpdateError } = await supabase
-            .from('usuarios')
-            .update({ foto_perfil: publicUrlData.publicUrl })
+            .from('users')
+            .update({ profile_photo: publicUrlData.publicUrl })
             .eq('id_auth', userId)
 
           if (urlUpdateError) throw urlUpdateError
@@ -451,16 +451,16 @@ export const useRestoreMaterialParameterMutation = () => {
 }
 
 const buildThreadPayload = (data) => ({
-  codigo_hilo: data.codigo_hilo?.trim() || null,
-  nombre_hilo: data.nombre_hilo?.trim() || null,
-  composicion: data.composicion?.trim() || null,
-  abrev: data.abrev?.trim() || null,
-  instrucciones_cuidado: data.instrucciones_cuidado?.trim() || null,
-  presentacion: data.presentacion?.trim() || null,
-  peso: data.peso ? Number(data.peso) : null,
-  unidad_medida: data.unidad_medida?.trim() || null,
-  codigo_color_hex: data.codigo_color_hex?.trim() || null,
-  color_descripcion: data.color_descripcion?.trim() || null,
+  thread_code: data.thread_code?.trim() || null,
+  thread_name: data.thread_name?.trim() || null,
+  composition: data.composition?.trim() || null,
+  abbreviation: data.abbreviation?.trim() || null,
+  care_instructions: data.care_instructions?.trim() || null,
+  presentation: data.presentation?.trim() || null,
+  weight: data.weight ? Number(data.weight) : null,
+  unit_of_measure: data.unit_of_measure?.trim() || null,
+  hex_color_code: data.hex_color_code?.trim() || null,
+  color_description: data.color_description?.trim() || null,
 })
 
 export const useCreateThreadMutation = () => {
@@ -469,7 +469,7 @@ export const useCreateThreadMutation = () => {
   return useMutation({
     mutationFn: async (data) => {
       const { error } = await supabase
-        .from('hilos')
+        .from('threads')
         .insert(buildThreadPayload(data))
       if (error) throw error
     },
@@ -489,7 +489,7 @@ export const useUpdateThreadMutation = () => {
   return useMutation({
     mutationFn: async ({ id, data }) => {
       const { error } = await supabase
-        .from('hilos')
+        .from('threads')
         .update(buildThreadPayload(data))
         .eq('id', id)
       if (error) throw error
@@ -510,7 +510,7 @@ export const useDeleteThreadMutation = () => {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('hilos')
+        .from('threads')
         .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
@@ -531,7 +531,7 @@ export const useRestoreThreadMutation = () => {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('hilos')
+        .from('threads')
         .update({ deleted_at: null })
         .eq('id', id)
       if (error) throw error
@@ -554,7 +554,7 @@ export const useCreateThreadsBulkMutation = () => {
       logger.info('Mutations', `Carga masiva de hilos: ${rows.length} registros`)
       const payload = rows.map(buildThreadPayload)
       const { error } = await supabase
-        .from('hilos')
+        .from('threads')
         .insert(payload)
       if (error) throw error
       return payload.length
@@ -572,12 +572,12 @@ export const useCreateThreadsBulkMutation = () => {
 }
 
 const buildProviderPayload = (data) => ({
-  razon_social: data.razon_social?.trim().toUpperCase() || null,
-  ruc: data.ruc?.trim() || null,
-  direccion: data.direccion?.trim() || null,
+  business_name: data.business_name?.trim().toUpperCase() || null,
+  tax_id: data.tax_id?.trim() || null,
+  address: data.address?.trim() || null,
   email: data.email?.trim().toLowerCase() || null,
-  telefono: data.telefono?.trim() || null,
-  celular: data.celular?.trim() || null,
+  phone: data.phone?.trim() || null,
+  mobile: data.mobile?.trim() || null,
 })
 
 export const useCreateProviderMutation = () => {
@@ -586,7 +586,7 @@ export const useCreateProviderMutation = () => {
   return useMutation({
     mutationFn: async (data) => {
       const { error } = await supabase
-        .from('proveedores')
+        .from('suppliers')
         .insert(buildProviderPayload(data))
       if (error) throw error
     },
@@ -606,7 +606,7 @@ export const useUpdateProviderMutation = () => {
   return useMutation({
     mutationFn: async ({ id, data }) => {
       const { error } = await supabase
-        .from('proveedores')
+        .from('suppliers')
         .update(buildProviderPayload(data))
         .eq('id', id)
       if (error) throw error
@@ -627,7 +627,7 @@ export const useDeleteProviderMutation = () => {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('proveedores')
+        .from('suppliers')
         .update({ deleted_at: getNowLima() })
         .eq('id', id)
       if (error) throw error
@@ -648,7 +648,7 @@ export const useRestoreProviderMutation = () => {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('proveedores')
+        .from('suppliers')
         .update({ deleted_at: null })
         .eq('id', id)
       if (error) throw error
@@ -671,7 +671,7 @@ export const useCreateProvidersBulkMutation = () => {
       logger.info('Mutations', `Carga masiva de proveedores: ${rows.length} registros`)
       const payload = rows.map(buildProviderPayload)
       const { error } = await supabase
-        .from('proveedores')
+        .from('suppliers')
         .insert(payload)
       if (error) throw error
       return payload.length
@@ -828,8 +828,8 @@ export const useRestoreHqpdsConfigurationMutation = () => {
 // =============================================
 
 const buildRolePayload = (data) => ({
-  nombre: (data.nombre || '').trim().toLowerCase(),
-  descripcion: (data.descripcion || '').trim() || null,
+  name: (data.name || '').trim().toLowerCase(),
+  description: (data.description || '').trim() || null,
   is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
 })
 
@@ -903,26 +903,26 @@ export const useUpdateRolePermissionsMutation = () => {
 
   return useMutation({
     mutationFn: async ({ rolId, permisos }) => {
-      logger.info('Mutations', `Actualizando permisos del rol id: ${rolId} (${permisos.length} formularios)`)
+      logger.info('Mutations', `Actualizando permisos del rol id: ${rolId} (${permisos.length} forms)`)
       // Delete existing permissions for this role
       const { error: deleteError } = await supabase
-        .from('rol_formulario')
+        .from('role_form')
         .delete()
-        .eq('rol_id', rolId)
+        .eq('role_id', rolId)
       if (deleteError) throw deleteError
 
       // Insert new permissions
       if (permisos.length > 0) {
         const payload = permisos.map((p) => ({
-          rol_id: rolId,
-          formulario_id: p.formulario_id,
-          puede_ver: Boolean(p.puede_ver),
-          puede_crear: Boolean(p.puede_crear),
-          puede_editar: Boolean(p.puede_editar),
-          puede_eliminar: Boolean(p.puede_eliminar),
+          role_id: rolId,
+          form_id: p.form_id,
+          can_view: Boolean(p.can_view),
+          can_create: Boolean(p.can_create),
+          can_edit: Boolean(p.can_edit),
+          can_delete: Boolean(p.can_delete),
         }))
         const { error: insertError } = await supabase
-          .from('rol_formulario')
+          .from('role_form')
           .insert(payload)
         if (insertError) throw insertError
       }
@@ -945,8 +945,8 @@ export const useUpdateUserRoleMutation = () => {
   return useMutation({
     mutationFn: async ({ userId, rolId }) => {
       const { error } = await supabase
-        .from('usuarios')
-        .update({ rol_id: rolId })
+        .from('users')
+        .update({ role_id: rolId })
         .eq('id', userId)
       if (error) throw error
     },

@@ -21,8 +21,9 @@ export const UsersManagementPage = () => {
 
   const filteredUsers = users.filter(
     (u) =>
-      (u.nombre || '').toLowerCase().includes(search.toLowerCase()) ||
-      (u.apellido || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.first_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.paternal_last_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (u.maternal_last_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (u.email || '').toLowerCase().includes(search.toLowerCase())
   )
 
@@ -36,7 +37,7 @@ export const UsersManagementPage = () => {
       headerName: 'Nombre',
       flex: 1,
       minWidth: 120,
-      valueGetter: (value, row) => `${row.nombre || ''} ${row.apellido || ''}`.trim(),
+      valueGetter: (value, row) => `${row.first_name || ''} ${row.paternal_last_name || ''} ${row.maternal_last_name || ''}`.trim(),
     },
     {
       field: 'email',
@@ -45,13 +46,13 @@ export const UsersManagementPage = () => {
       minWidth: 200,
     },
     {
-      field: 'rol_id',
+      field: 'role_id',
       headerName: 'Rol',
       width: 200,
       renderCell: (params) => (
         <FormControl size="small" fullWidth>
           <Select
-            value={params.row.rol_id || ''}
+            value={params.row.role_id || ''}
             onChange={(e) => handleRoleChange(params.row.id, e.target.value)}
             displayEmpty
             sx={{ fontSize: 13 }}
@@ -63,7 +64,7 @@ export const UsersManagementPage = () => {
               .filter((r) => r.is_active)
               .map((role) => (
                 <MenuItem key={role.id} value={role.id}>
-                  {role.nombre}
+                  {role.name}
                 </MenuItem>
               ))}
           </Select>
@@ -75,14 +76,14 @@ export const UsersManagementPage = () => {
       headerName: 'Rol actual',
       width: 150,
       renderCell: (params) => {
-        const roleName = params.row.roles?.nombre
+        const roleName = params.row.roles?.name
         if (!roleName) return <Chip label="Sin rol" size="small" color="default" />
         const colorMap = { admin: 'error', supervisor: 'warning', usuario: 'info' }
         return <Chip label={roleName} size="small" color={colorMap[roleName] || 'default'} />
       },
     },
     {
-      field: 'fecha_registro',
+      field: 'registration_date',
       headerName: 'Fecha registro',
       width: 160,
       valueFormatter: (value) => {
