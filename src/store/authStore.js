@@ -3,6 +3,47 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../config/supabase'
 import logger from '../utils/logger'
 
+/**
+ * Ensures a Google OAuth user has a corresponding row in the public.users table.
+ * Runs on every SIGNED_IN event; no-ops if the record already exists.
+ */
+const ensureGoogleUserRecord = async (authUser) => {
+  if (authUser.app_metadata?.provider !== 'google') return
+
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id_auth', authUser.id)
+    .maybeSingle()
+
+  if (existing) return
+
+  const meta = authUser.user_metadata || {}
+  const firstName = meta.given_name || meta.full_name?.split(' ')?.[0] || 'Usuario'
+  const lastName =
+    meta.family_name || meta.full_name?.split(' ').slice(1).join(' ') || 'Google'
+
+  const { data: defaultRole } = await supabase
+    .from('roles')
+    .select('id')
+    .eq('name', 'usuario')
+    .single()
+
+  const { error } = await supabase.from('users').insert({
+    id_auth: authUser.id,
+    email: authUser.email,
+    first_name: firstName,
+    paternal_last_name: lastName,
+    role_id: defaultRole?.id || null,
+  })
+
+  if (!error) {
+    logger.info('Auth', `Usuario Google registrado en tabla users: ${authUser.email}`)
+  } else {
+    logger.error('Auth', 'Error al registrar usuario Google en tabla users', error)
+  }
+}
+
 export const useAuthStore = create(
   persist(
     (set) => ({
@@ -42,6 +83,31 @@ export const useAuthStore = create(
         try {
           set({ loading: true })
           logger.info('Auth', 'Inicializando autenticación...')
+
+          // Listen for ongoing auth changes:
+          // - SIGNED_IN  → fires after Google OAuth redirect (processes URL hash token)
+          // - SIGNED_OUT → fires when the session expires or is revoked externally
+          supabase.auth.onAuthStateChange(async (event, session) => {
+            logger.debug('Auth', `Evento auth: ${event}`)
+
+            if (event === 'SIGNED_IN' && session?.user) {
+              await ensureGoogleUserRecord(session.user)
+              const { data: userData } = await supabase
+                .from('users')
+                .select('roles(name)')
+                .eq('id_auth', session.user.id)
+                .single()
+              const roleName = userData?.roles?.name || null
+              set({ user: session.user, authenticated: true, userRole: roleName, loading: false })
+              logger.info('Auth', `SIGNED_IN: ${session.user.email} (rol: ${roleName})`)
+            } else if (event === 'SIGNED_OUT') {
+              set({ user: null, authenticated: false, userRole: null, loading: false })
+              logger.info('Auth', 'Sesión cerrada por evento externo')
+            }
+          })
+
+          // Also resolve the current session immediately (covers existing sessions
+          // and Google OAuth tokens that Supabase processes from the URL hash).
           const {
             data: { session },
             error,
@@ -51,6 +117,7 @@ export const useAuthStore = create(
 
           if (session?.user) {
             logger.info('Auth', `Sesión activa encontrada para: ${session.user.email}`)
+            await ensureGoogleUserRecord(session.user)
             const { data: userData } = await supabase
               .from('users')
               .select('roles(name)')

@@ -7,6 +7,11 @@ export const ProtectedRoute = ({ children, requiredRoute }) => {
   const { authenticated, loading, user, userRole } = useAuthStore()
   const { data: permissionsData, isLoading: permissionsLoading } = useGetUserPermissions(user?.id)
 
+  // If not authenticated at all, redirect immediately without waiting for loading
+  if (!authenticated || !user) {
+    return <Navigate to="/login" replace />
+  }
+
   if (loading || permissionsLoading) {
     return (
       <Box
@@ -20,10 +25,6 @@ export const ProtectedRoute = ({ children, requiredRoute }) => {
         <CircularProgress />
       </Box>
     )
-  }
-
-  if (!authenticated || !user) {
-    return <Navigate to="/login" replace />
   }
 
   // If a specific route is required, check permissions
